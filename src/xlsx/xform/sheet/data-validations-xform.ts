@@ -28,7 +28,35 @@ function optimiseDataValidations(model: any): any[] {
   if (!model) {
     return [];
   }
-  const dvList = Object.entries(model)
+
+  // First, handle range: prefixed keys directly (large ranges stored during parsing)
+  const rangeValidations: any[] = [];
+  const regularModel: any = {};
+
+  for (const [key, value] of Object.entries(model)) {
+    // Skip undefined/null values (removed validations)
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (key.startsWith("range:")) {
+      // Large range stored during parsing - output directly
+      const rangeStr = key.slice(6); // Remove "range:" prefix
+      const { sqref: _sqref, ...rest } = value as any;
+      rangeValidations.push({
+        ...rest,
+        sqref: rangeStr
+      });
+    } else {
+      regularModel[key] = value;
+    }
+  }
+
+  // If no regular entries, just return range validations
+  if (Object.keys(regularModel).length === 0) {
+    return rangeValidations;
+  }
+
+  const dvList = Object.entries(regularModel)
     .map(([address, dataValidation]: [string, any]) => ({
       address,
       dataValidation,
@@ -39,13 +67,16 @@ function optimiseDataValidations(model: any): any[] {
   const matchCol = (addr: any, height: number, col: number): boolean => {
     for (let i = 0; i < height; i++) {
       const otherAddress = colCache.encodeAddress(addr.row + i, col);
-      if (!model[otherAddress] || !isEqual(model[addr.address], model[otherAddress])) {
+      if (
+        !regularModel[otherAddress] ||
+        !isEqual(regularModel[addr.address], regularModel[otherAddress])
+      ) {
         return false;
       }
     }
     return true;
   };
-  return dvList
+  const optimized = dvList
     .map(dv => {
       if (!dv.marked) {
         const addr: any = colCache.decodeEx(dv.address);
@@ -60,7 +91,10 @@ function optimiseDataValidations(model: any): any[] {
         // iterate downwards - finding matching cells
         let height = 1;
         let otherAddress = colCache.encodeAddress(addr.row + height, addr.col);
-        while (model[otherAddress] && isEqual(dv.dataValidation, model[otherAddress])) {
+        while (
+          regularModel[otherAddress] &&
+          isEqual(dv.dataValidation, regularModel[otherAddress])
+        ) {
           height++;
           otherAddress = colCache.encodeAddress(addr.row + height, addr.col);
         }
@@ -96,6 +130,8 @@ function optimiseDataValidations(model: any): any[] {
       return null;
     })
     .filter(Boolean);
+
+  return [...rangeValidations, ...optimized];
 }
 
 class DataValidationsXform extends BaseXform {
@@ -227,9 +263,19 @@ class DataValidationsXform extends BaseXform {
         list.forEach((addr: string) => {
           if (addr.includes(":")) {
             const range = new Range(addr);
-            range.forEachAddress((address: string) => {
-              this.model[address] = this._dataValidation;
-            });
+            // Only expand small ranges to avoid performance issues with large ranges
+            // like B2:B1048576 (entire column validations)
+            const rangeSize = (range.bottom - range.top + 1) * (range.right - range.left + 1);
+            if (rangeSize <= 1000) {
+              // Small range: expand to individual cells for backward compatibility
+              range.forEachAddress((address: string) => {
+                this.model[address] = this._dataValidation;
+              });
+            } else {
+              // Large range: store as range string with special marker
+              // The key format "range:A1:Z100" allows DataValidations.find() to detect it
+              this.model[`range:${addr}`] = this._dataValidation;
+            }
           } else {
             this.model[addr] = this._dataValidation;
           }
