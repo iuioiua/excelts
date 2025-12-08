@@ -7,13 +7,105 @@
  */
 
 import zlib from "zlib";
-import { PassThrough, pipeline } from "stream";
+import { PassThrough, Transform, pipeline } from "stream";
+import type { TransformCallback } from "stream";
 import { PullStream } from "./pull-stream.js";
 import { NoopStream } from "./noop-stream.js";
 import { bufferStream } from "./buffer-stream.js";
 import { parseExtraField, type ExtraField } from "./parse-extra-field.js";
 import { parseDateTime } from "./parse-datetime.js";
 import { parse as parseBuffer } from "./parse-buffer.js";
+
+// Check if native zlib is available (Node.js environment)
+// In browser with polyfill, createInflateRaw may not exist or may not work properly
+const hasNativeZlib =
+  typeof zlib?.createInflateRaw === "function" &&
+  typeof process !== "undefined" &&
+  process.versions?.node;
+
+/**
+ * A Transform stream that wraps browser's native DecompressionStream.
+ * Used when native zlib is not available (browser environment).
+ */
+class BrowserInflateRawStream extends Transform {
+  private chunks: Uint8Array[] = [];
+  private totalLength = 0;
+
+  constructor() {
+    super();
+  }
+
+  _transform(chunk: Buffer, _encoding: BufferEncoding, callback: TransformCallback): void {
+    // Avoid unnecessary copy - Buffer extends Uint8Array
+    this.chunks.push(chunk);
+    this.totalLength += chunk.length;
+    callback();
+  }
+
+  _flush(callback: TransformCallback): void {
+    try {
+      // Use pre-calculated totalLength for better performance
+      const combined = new Uint8Array(this.totalLength);
+      let offset = 0;
+      for (const chunk of this.chunks) {
+        combined.set(chunk, offset);
+        offset += chunk.length;
+      }
+      // Clear chunks to free memory
+      this.chunks = [];
+
+      // Use native DecompressionStream
+      const ds = new DecompressionStream("deflate-raw");
+      const writer = ds.writable.getWriter();
+      const reader = ds.readable.getReader();
+
+      // Optimized read loop - collect chunks and concatenate at the end
+      const readAll = async (): Promise<Buffer> => {
+        const results: Uint8Array[] = [];
+        let total = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          results.push(value);
+          total += value.length;
+        }
+        // Single allocation for final result
+        const result = Buffer.allocUnsafe(total);
+        let off = 0;
+        for (const r of results) {
+          result.set(r, off);
+          off += r.length;
+        }
+        return result;
+      };
+
+      writer.write(combined);
+      writer.close();
+
+      readAll()
+        .then(decompressed => {
+          this.push(decompressed);
+          callback();
+        })
+        .catch(callback);
+    } catch (err) {
+      callback(err as Error);
+    }
+  }
+}
+
+/**
+ * Creates an InflateRaw stream.
+ * Uses native zlib in Node.js for best performance, falls back to DecompressionStream in browser.
+ */
+function createInflateRaw(): Transform {
+  if (hasNativeZlib) {
+    return zlib.createInflateRaw();
+  }
+  return new BrowserInflateRawStream();
+}
 
 const endDirectorySignature = Buffer.alloc(4);
 endDirectorySignature.writeUInt32LE(0x06054b50, 0);
@@ -246,7 +338,7 @@ export class Parse extends PullStream {
 
     entry.__autodraining = __autodraining; // expose __autodraining for test purposes
     const inflater =
-      vars.compressionMethod && !__autodraining ? zlib.createInflateRaw() : new PassThrough();
+      vars.compressionMethod && !__autodraining ? createInflateRaw() : new PassThrough();
 
     if (fileSizeKnown) {
       entry.size = vars.uncompressedSize;

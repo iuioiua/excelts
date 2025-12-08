@@ -6,21 +6,6 @@ export function delay(ms: number): Promise<void> {
 
 export function nop(): void {}
 
-export function promiseImmediate<T>(value: T): Promise<T> {
-  return new Promise(resolve => {
-    if ((global as any).setImmediate) {
-      setImmediate(() => {
-        resolve(value);
-      });
-    } else {
-      // poorman's setImmediate - must wait at least 1ms
-      setTimeout(() => {
-        resolve(value);
-      }, 1);
-    }
-  });
-}
-
 // useful stuff
 export const inherits = function <
   T extends new (...args: any[]) => any,
@@ -227,7 +212,6 @@ export function objectFromProps<T = any>(
 /** @deprecated Import functions directly instead of using the utils object */
 export const utils = {
   nop,
-  promiseImmediate,
   inherits,
   dateToExcel,
   excelToDate,
@@ -246,3 +230,17 @@ export const utils = {
   toSortedArray,
   objectFromProps
 };
+
+// TextDecoder is available in ES2020+ and all modern browsers/Node.js
+const textDecoder = new TextDecoder("utf-8");
+
+/**
+ * Convert a Buffer or ArrayBuffer to a UTF-8 string
+ * Works in both Node.js and browser environments
+ */
+export function bufferToString(chunk: Buffer | ArrayBuffer | string): string {
+  if (typeof chunk === "string") {
+    return chunk;
+  }
+  return textDecoder.decode(chunk);
+}

@@ -1,8 +1,6 @@
 import events from "events";
 import { Zip, ZipPassThrough, ZipDeflate } from "fflate";
 import { StreamBuf } from "./stream-buf.js";
-import { stringToBuffer } from "./browser-buffer-encode.js";
-import { isBrowser } from "./browser.js";
 
 interface ZipWriterOptions {
   type?: string;
@@ -78,34 +76,24 @@ class ZipWriter extends events.EventEmitter {
     let buffer: Uint8Array;
 
     if (Object.prototype.hasOwnProperty.call(options, "base64") && options.base64) {
-      // Use Buffer.from for efficient base64 decoding
+      // Decode base64 data - Buffer.from works in both Node.js and browser (via polyfill)
       const base64Data = typeof data === "string" ? data : data.toString();
-      if (isBrowser) {
-        // Browser: use atob with optimized Uint8Array conversion
-        const binaryString = atob(base64Data);
-        const len = binaryString.length;
-        buffer = new Uint8Array(len);
-        // Use a single loop with cached length for better performance
-        for (let i = 0; i < len; i++) {
-          buffer[i] = binaryString.charCodeAt(i);
-        }
-      } else {
-        // Node.js: use efficient Buffer.from
-        buffer = Buffer.from(base64Data, "base64");
-      }
+      buffer = Buffer.from(base64Data, "base64");
+    } else if (typeof data === "string") {
+      // Convert string to Buffer - works in both environments
+      buffer = Buffer.from(data, "utf8");
+    } else if (Buffer.isBuffer(data)) {
+      // Buffer extends Uint8Array, fflate can use it directly - no copy needed
+      buffer = data;
+    } else if (ArrayBuffer.isView(data)) {
+      // Handle typed arrays - create view without copy
+      buffer = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    } else if (data instanceof ArrayBuffer) {
+      // Handle ArrayBuffer directly
+      buffer = new Uint8Array(data);
     } else {
-      if (typeof data === "string") {
-        // Convert string to Uint8Array
-        if (isBrowser) {
-          buffer = stringToBuffer(data);
-        } else {
-          buffer = Buffer.from(data, "utf8");
-        }
-      } else if (Buffer.isBuffer(data)) {
-        buffer = new Uint8Array(data);
-      } else {
-        buffer = data;
-      }
+      // Assume it's already a Uint8Array or compatible type
+      buffer = data;
     }
 
     // Add file to zip using streaming API

@@ -60,4 +60,33 @@ describe("ExcelTS Browser Tests", () => {
 
     expect(buffer.toString()).toEqual('"Hello, World!",What time is it?\n7,12pm');
   });
+
+  // Test crypto polyfill - worksheet protection uses crypto.randomBytes and crypto.createHash
+  it("should support worksheet protection with password (crypto polyfill)", async () => {
+    const { Workbook } = ExcelTS;
+    const wb = new Workbook();
+    const ws = wb.addWorksheet("protected");
+
+    ws.getCell("A1").value = "Protected Data";
+
+    // This uses crypto.randomBytes() and crypto.createHash() internally
+    await ws.protect("password123", { sheet: true });
+
+    expect(ws.sheetProtection).toBeTruthy();
+    expect(ws.sheetProtection.sheet).toBe(true);
+    expect(ws.sheetProtection.algorithmName).toBe("SHA-512");
+    expect(ws.sheetProtection.saltValue).toBeTruthy();
+    expect(ws.sheetProtection.hashValue).toBeTruthy();
+    expect(ws.sheetProtection.spinCount).toBe(100000);
+
+    // Verify we can write and read back the protected workbook
+    const buffer = await wb.xlsx.writeBuffer();
+    const wb2 = new Workbook();
+    await wb2.xlsx.load(buffer);
+
+    const ws2 = wb2.getWorksheet("protected");
+    expect(ws2).toBeTruthy();
+    expect(ws2!.sheetProtection).toBeTruthy();
+    expect(ws2!.sheetProtection.sheet).toBe(true);
+  });
 });

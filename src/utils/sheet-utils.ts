@@ -1,13 +1,44 @@
 /**
  * Utility functions for ExcelTS
  * Provides convenient helper functions for common spreadsheet operations
- * compatible with xlsx library's utils API but built on excelts native types
  */
 
 import { Workbook } from "../doc/workbook.js";
 import type { Worksheet } from "../doc/worksheet.js";
+import type { Cell } from "../doc/cell.js";
 import { colCache } from "./col-cache.js";
 import type { CellValue } from "../types.js";
+import { dateToExcel } from "./utils.js";
+import { format as cellFormat } from "./cell-format.js";
+
+/**
+ * Get formatted display text for a cell value
+ * Returns the value formatted according to the cell's numFmt
+ * This matches Excel's display exactly
+ */
+function getCellDisplayText(cell: Cell): string {
+  const value = cell.value;
+  const fmt = cell.numFmt || "General";
+
+  // Null/undefined
+  if (value == null) {
+    return "";
+  }
+
+  // Date object - convert to Excel serial number
+  if (value instanceof Date) {
+    const serial = dateToExcel(value, false);
+    return cellFormat(fmt, serial);
+  }
+
+  // Number/Boolean/String - let cellFormat handle it
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "string") {
+    return cellFormat(fmt, value);
+  }
+
+  // Fallback to cell.text for other types (rich text, hyperlink, error, formula, etc.)
+  return cell.text;
+}
 
 // =============================================================================
 // Types
@@ -44,82 +75,82 @@ export type JSONRow = Record<string, CellValue>;
 
 /**
  * Decode column string to 0-indexed number
- * @example decode_col("A") => 0, decode_col("Z") => 25, decode_col("AA") => 26
+ * @example decodeCol("A") => 0, decodeCol("Z") => 25, decodeCol("AA") => 26
  */
-export function decode_col(colstr: string): number {
+export function decodeCol(colstr: string): number {
   return colCache.l2n(colstr.toUpperCase()) - 1;
 }
 
 /**
  * Encode 0-indexed column number to string
- * @example encode_col(0) => "A", encode_col(25) => "Z", encode_col(26) => "AA"
+ * @example encodeCol(0) => "A", encodeCol(25) => "Z", encodeCol(26) => "AA"
  */
-export function encode_col(col: number): string {
+export function encodeCol(col: number): string {
   return colCache.n2l(col + 1);
 }
 
 /**
  * Decode row string to 0-indexed number
- * @example decode_row("1") => 0, decode_row("10") => 9
+ * @example decodeRow("1") => 0, decodeRow("10") => 9
  */
-export function decode_row(rowstr: string): number {
+export function decodeRow(rowstr: string): number {
   return parseInt(rowstr, 10) - 1;
 }
 
 /**
  * Encode 0-indexed row number to string
- * @example encode_row(0) => "1", encode_row(9) => "10"
+ * @example encodeRow(0) => "1", encodeRow(9) => "10"
  */
-export function encode_row(row: number): string {
+export function encodeRow(row: number): string {
   return String(row + 1);
 }
 
 /**
  * Decode cell address string to CellAddress object
- * @example decode_cell("A1") => {c: 0, r: 0}, decode_cell("B2") => {c: 1, r: 1}
+ * @example decodeCell("A1") => {c: 0, r: 0}, decodeCell("B2") => {c: 1, r: 1}
  */
-export function decode_cell(cstr: string): CellAddress {
+export function decodeCell(cstr: string): CellAddress {
   const addr = colCache.decodeAddress(cstr.toUpperCase());
   return { c: addr.col - 1, r: addr.row - 1 };
 }
 
 /**
  * Encode CellAddress object to cell address string
- * @example encode_cell({c: 0, r: 0}) => "A1", encode_cell({c: 1, r: 1}) => "B2"
+ * @example encodeCell({c: 0, r: 0}) => "A1", encodeCell({c: 1, r: 1}) => "B2"
  */
-export function encode_cell(cell: CellAddress): string {
+export function encodeCell(cell: CellAddress): string {
   return colCache.encodeAddress(cell.r + 1, cell.c + 1);
 }
 
 /**
  * Decode range string to Range object
- * @example decode_range("A1:B2") => {s: {c: 0, r: 0}, e: {c: 1, r: 1}}
+ * @example decodeRange("A1:B2") => {s: {c: 0, r: 0}, e: {c: 1, r: 1}}
  */
-export function decode_range(range: string): Range {
+export function decodeRange(range: string): Range {
   const idx = range.indexOf(":");
   if (idx === -1) {
-    const cell = decode_cell(range);
+    const cell = decodeCell(range);
     return { s: cell, e: { ...cell } };
   }
   return {
-    s: decode_cell(range.slice(0, idx)),
-    e: decode_cell(range.slice(idx + 1))
+    s: decodeCell(range.slice(0, idx)),
+    e: decodeCell(range.slice(idx + 1))
   };
 }
 
 /**
  * Encode Range object to range string
  */
-export function encode_range(range: Range): string;
-export function encode_range(start: CellAddress, end: CellAddress): string;
-export function encode_range(startOrRange: CellAddress | Range, end?: CellAddress): string {
+export function encodeRange(range: Range): string;
+export function encodeRange(start: CellAddress, end: CellAddress): string;
+export function encodeRange(startOrRange: CellAddress | Range, end?: CellAddress): string {
   if (end === undefined) {
     const range = startOrRange as Range;
-    return encode_range(range.s, range.e);
+    return encodeRange(range.s, range.e);
   }
   const start = startOrRange as CellAddress;
-  const startStr = encode_cell(start);
-  const endStr = encode_cell(end);
+  const startStr = encodeCell(start);
+  const endStr = encodeCell(end);
   return startStr === endStr ? startStr : `${startStr}:${endStr}`;
 }
 
@@ -151,9 +182,9 @@ export interface SheetAddJSONOpts extends JSON2SheetOpts {
 /**
  * Create a worksheet from an array of objects (xlsx compatible)
  * @example
- * const ws = json_to_sheet([{name: "Alice", age: 30}, {name: "Bob", age: 25}])
+ * const ws = jsonToSheet([{name: "Alice", age: 30}, {name: "Bob", age: 25}])
  */
-export function json_to_sheet(data: JSONRow[], opts?: JSON2SheetOpts): Worksheet {
+export function jsonToSheet(data: JSONRow[], opts?: JSON2SheetOpts): Worksheet {
   const o = opts || {};
   // Create a temporary workbook to get a worksheet
   const tempWb = new Workbook();
@@ -206,7 +237,7 @@ export function json_to_sheet(data: JSONRow[], opts?: JSON2SheetOpts): Worksheet
 /**
  * Add data from an array of objects to an existing worksheet (xlsx compatible)
  */
-export function sheet_add_json(
+export function sheetAddJson(
   worksheet: Worksheet,
   data: JSONRow[],
   opts?: SheetAddJSONOpts
@@ -223,7 +254,7 @@ export function sheet_add_json(
 
   if (o.origin !== undefined) {
     if (typeof o.origin === "string") {
-      const addr = decode_cell(o.origin);
+      const addr = decodeCell(o.origin);
       startRow = addr.r + 1;
       startCol = addr.c + 1;
     } else if (typeof o.origin === "number") {
@@ -294,7 +325,7 @@ export interface Sheet2JSONOpts {
    * - undefined: Use worksheet range
    */
   range?: number | string;
-  /** Use raw values (true) or formatted strings (false). Default: true */
+  /** Use raw values (true, default) or formatted text strings with trim (false) */
   raw?: boolean;
   /** Default value for empty cells */
   defval?: CellValue;
@@ -306,18 +337,18 @@ export interface Sheet2JSONOpts {
  * Convert worksheet to JSON array (xlsx compatible)
  * @example
  * // Default: array of objects with first row as headers
- * const data = sheet_to_json(worksheet)
+ * const data = sheetToJson(worksheet)
  * // => [{name: "Alice", age: 30}, {name: "Bob", age: 25}]
  *
  * // Array of arrays
- * const aoa = sheet_to_json(worksheet, { header: 1 })
+ * const aoa = sheetToJson(worksheet, { header: 1 })
  * // => [["name", "age"], ["Alice", 30], ["Bob", 25]]
  *
  * // Column letters as keys
- * const cols = sheet_to_json(worksheet, { header: "A" })
+ * const cols = sheetToJson(worksheet, { header: "A" })
  * // => [{A: "name", B: "age"}, {A: "Alice", B: 30}]
  */
-export function sheet_to_json<T = JSONRow>(worksheet: Worksheet, opts?: Sheet2JSONOpts): T[] {
+export function sheetToJson<T = JSONRow>(worksheet: Worksheet, opts?: Sheet2JSONOpts): T[] {
   const o = opts || {};
 
   // Determine range
@@ -330,7 +361,7 @@ export function sheet_to_json<T = JSONRow>(worksheet: Worksheet, opts?: Sheet2JS
     if (typeof o.range === "number") {
       startRow = o.range + 1; // 0-indexed to 1-indexed
     } else if (typeof o.range === "string") {
-      const r = decode_range(o.range);
+      const r = decodeRange(o.range);
       startRow = r.s.r + 1;
       endRow = r.e.r + 1;
       startCol = r.s.c + 1;
@@ -357,9 +388,9 @@ export function sheet_to_json<T = JSONRow>(worksheet: Worksheet, opts?: Sheet2JS
 
       for (let col = startCol; col <= endCol; col++) {
         const cell = worksheet.getCell(row, col);
-        const val = cell.value;
+        const val = o.raw === false ? getCellDisplayText(cell).trim() : cell.value;
 
-        if (val != null) {
+        if (val != null && val !== "") {
           rowData[col - startCol] = val;
           isEmpty = false;
         } else if (o.defval !== undefined) {
@@ -389,10 +420,10 @@ export function sheet_to_json<T = JSONRow>(worksheet: Worksheet, opts?: Sheet2JS
 
       for (let col = startCol; col <= endCol; col++) {
         const cell = worksheet.getCell(row, col);
-        const val = cell.value;
-        const key = encode_col(col - 1); // 0-indexed for encode_col
+        const val = o.raw === false ? getCellDisplayText(cell).trim() : cell.value;
+        const key = encodeCol(col - 1); // 0-indexed for encodeCol
 
-        if (val != null) {
+        if (val != null && val !== "") {
           rowData[key] = val;
           isEmpty = false;
         } else if (o.defval !== undefined) {
@@ -421,9 +452,9 @@ export function sheet_to_json<T = JSONRow>(worksheet: Worksheet, opts?: Sheet2JS
         const colIdx = col - startCol;
         const key = headerOpt[colIdx] ?? `__EMPTY_${colIdx}`;
         const cell = worksheet.getCell(row, col);
-        const val = cell.value;
+        const val = o.raw === false ? getCellDisplayText(cell).trim() : cell.value;
 
-        if (val != null) {
+        if (val != null && val !== "") {
           rowData[key] = val;
           isEmpty = false;
         } else if (o.defval !== undefined) {
@@ -471,10 +502,10 @@ export function sheet_to_json<T = JSONRow>(worksheet: Worksheet, opts?: Sheet2JS
 
     for (let col = startCol; col <= endCol; col++) {
       const cell = worksheet.getCell(row, col);
-      const val = cell.value;
+      const val = o.raw === false ? getCellDisplayText(cell).trim() : cell.value;
       const key = headers[col - startCol];
 
-      if (val != null) {
+      if (val != null && val !== "") {
         rowData[key] = val;
         isEmpty = false;
       } else if (o.defval !== undefined) {
@@ -508,7 +539,7 @@ export interface Sheet2CSVOpts {
 /**
  * Convert worksheet to CSV string
  */
-export function sheet_to_csv(worksheet: Worksheet, opts?: Sheet2CSVOpts): string {
+export function sheetToCsv(worksheet: Worksheet, opts?: Sheet2CSVOpts): string {
   const o = opts || {};
   const FS = o.FS ?? ",";
   const RS = o.RS ?? "\n";
@@ -575,18 +606,18 @@ export function sheet_to_csv(worksheet: Worksheet, opts?: Sheet2CSVOpts): string
 /**
  * Create a new workbook
  */
-export function book_new(): Workbook {
+export function bookNew(): Workbook {
   return new Workbook();
 }
 
 /**
  * Append worksheet to workbook (xlsx compatible)
  * @example
- * const wb = book_new();
- * const ws = json_to_sheet([{a: 1, b: 2}]);
- * book_append_sheet(wb, ws, "Sheet1");
+ * const wb = bookNew();
+ * const ws = jsonToSheet([{a: 1, b: 2}]);
+ * bookAppendSheet(wb, ws, "Sheet1");
  */
-export function book_append_sheet(workbook: Workbook, worksheet: Worksheet, name?: string): void {
+export function bookAppendSheet(workbook: Workbook, worksheet: Worksheet, name?: string): void {
   // Copy the worksheet data to a new sheet in the workbook
   const newWs = workbook.addWorksheet(name);
 
@@ -627,9 +658,9 @@ export interface AOA2SheetOpts {
 /**
  * Create a worksheet from an array of arrays (xlsx compatible)
  * @example
- * const ws = aoa_to_sheet([["Name", "Age"], ["Alice", 30], ["Bob", 25]])
+ * const ws = aoaToSheet([["Name", "Age"], ["Alice", 30], ["Bob", 25]])
  */
-export function aoa_to_sheet(data: CellValue[][], opts?: AOA2SheetOpts): Worksheet {
+export function aoaToSheet(data: CellValue[][], opts?: AOA2SheetOpts): Worksheet {
   const tempWb = new Workbook();
   const worksheet = tempWb.addWorksheet("Sheet1");
 
@@ -643,7 +674,7 @@ export function aoa_to_sheet(data: CellValue[][], opts?: AOA2SheetOpts): Workshe
 
   if (opts?.origin !== undefined) {
     if (typeof opts.origin === "string") {
-      const addr = decode_cell(opts.origin);
+      const addr = decodeCell(opts.origin);
       startRow = addr.r + 1;
       startCol = addr.c + 1;
     } else if (typeof opts.origin === "number") {
@@ -671,7 +702,7 @@ export function aoa_to_sheet(data: CellValue[][], opts?: AOA2SheetOpts): Workshe
 /**
  * Add data from an array of arrays to an existing worksheet (xlsx compatible)
  */
-export function sheet_add_aoa(
+export function sheetAddAoa(
   worksheet: Worksheet,
   data: CellValue[][],
   opts?: AOA2SheetOpts
@@ -686,7 +717,7 @@ export function sheet_add_aoa(
 
   if (opts?.origin !== undefined) {
     if (typeof opts.origin === "string") {
-      const addr = decode_cell(opts.origin);
+      const addr = decodeCell(opts.origin);
       startRow = addr.r + 1;
       startCol = addr.c + 1;
     } else if (typeof opts.origin === "number") {
@@ -719,7 +750,7 @@ export function sheet_add_aoa(
 /**
  * Convert worksheet to array of arrays
  */
-export function sheet_to_aoa(worksheet: Worksheet): CellValue[][] {
+export function sheetToAoa(worksheet: Worksheet): CellValue[][] {
   const result: CellValue[][] = [];
 
   worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
@@ -738,26 +769,45 @@ export function sheet_to_aoa(worksheet: Worksheet): CellValue[][] {
 // =============================================================================
 
 export const utils = {
-  // Cell encoding/decoding
-  decode_col,
-  encode_col,
-  decode_row,
-  encode_row,
-  decode_cell,
-  encode_cell,
-  decode_range,
-  encode_range,
+  // Cell encoding/decoding (camelCase)
+  decodeCol,
+  encodeCol,
+  decodeRow,
+  encodeRow,
+  decodeCell,
+  encodeCell,
+  decodeRange,
+  encodeRange,
 
-  // Sheet/JSON conversion
-  json_to_sheet,
-  sheet_add_json,
-  sheet_to_json,
-  sheet_to_csv,
-  aoa_to_sheet,
-  sheet_add_aoa,
-  sheet_to_aoa,
+  // Sheet/JSON conversion (camelCase)
+  jsonToSheet,
+  sheetAddJson,
+  sheetToJson,
+  sheetToCsv,
+  aoaToSheet,
+  sheetAddAoa,
+  sheetToAoa,
 
-  // Workbook functions
-  book_new,
-  book_append_sheet
+  // Workbook functions (camelCase)
+  bookNew,
+  bookAppendSheet,
+
+  // xlsx compatibility aliases (snake_case)
+  decode_col: decodeCol,
+  encode_col: encodeCol,
+  decode_row: decodeRow,
+  encode_row: encodeRow,
+  decode_cell: decodeCell,
+  encode_cell: encodeCell,
+  decode_range: decodeRange,
+  encode_range: encodeRange,
+  json_to_sheet: jsonToSheet,
+  sheet_add_json: sheetAddJson,
+  sheet_to_json: sheetToJson,
+  sheet_to_csv: sheetToCsv,
+  aoa_to_sheet: aoaToSheet,
+  sheet_add_aoa: sheetAddAoa,
+  sheet_to_aoa: sheetToAoa,
+  book_new: bookNew,
+  book_append_sheet: bookAppendSheet
 };

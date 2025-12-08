@@ -17,7 +17,7 @@ describe("StreamBuf", () => {
     const stream = new StreamBuf();
     stream.write("Hello, World!");
     const chunk = stream.read();
-    expect(chunk instanceof Buffer).toBeTruthy();
+    expect(Buffer.isBuffer(chunk)).toBeTruthy();
     expect(chunk.toString("UTF8")).toBe("Hello, World!");
   });
 
@@ -29,7 +29,7 @@ describe("StreamBuf", () => {
     strBuf.addText("Hello, World!");
     await stream.write(strBuf);
     const chunk = stream.read();
-    expect(chunk instanceof Buffer).toBeTruthy();
+    expect(Buffer.isBuffer(chunk)).toBeTruthy();
     expect(chunk.toString("UTF8")).toBe("Hello, World!");
   });
 
@@ -61,7 +61,75 @@ describe("StreamBuf", () => {
       await stream.write({});
       expect.fail("should fail for given argument");
     } catch (e: any) {
-      expect(e.message).toBe("Chunk must be one of type String, Buffer or StringBuf.");
+      expect(e.message).toBe(
+        "Chunk must be one of type String, Buffer, Uint8Array, ArrayBuffer or StringBuf."
+      );
     }
+  });
+
+  // Test for cross-realm Buffer compatibility (e.g., Web Workers)
+  // Buffer.isBuffer() works across different realms where instanceof fails
+  it("handles Buffer data using Buffer.isBuffer() for cross-realm compatibility", async () => {
+    const stream = new StreamBuf();
+    const bufferData = Buffer.from("Cross-realm test data");
+
+    // This should work even if the Buffer comes from a different realm
+    await stream.write(bufferData);
+    const chunk = stream.read();
+
+    expect(Buffer.isBuffer(chunk)).toBeTruthy();
+    expect(chunk.toString("UTF8")).toBe("Cross-realm test data");
+  });
+
+  // Test direct Uint8Array support (important for browser environments)
+  it("handles Uint8Array directly without conversion", async () => {
+    const stream = new StreamBuf();
+    const uint8Data = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
+
+    // Uint8Array should be accepted directly (cross-realm safe via ArrayBuffer.isView)
+    await stream.write(uint8Data);
+    const chunk = stream.read();
+
+    expect(Buffer.isBuffer(chunk)).toBeTruthy();
+    expect(chunk.toString("UTF8")).toBe("Hello");
+  });
+
+  it("handles Uint8Array converted to Buffer", async () => {
+    const stream = new StreamBuf();
+    const uint8Data = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
+    const bufferData = Buffer.from(uint8Data);
+
+    await stream.write(bufferData);
+    const chunk = stream.read();
+
+    expect(Buffer.isBuffer(chunk)).toBeTruthy();
+    expect(chunk.toString("UTF8")).toBe("Hello");
+  });
+
+  // Test ArrayBuffer support (important for browser environments)
+  it("handles ArrayBuffer directly", async () => {
+    const stream = new StreamBuf();
+    const arrayBuffer = new ArrayBuffer(5);
+    const view = new Uint8Array(arrayBuffer);
+    view.set([72, 101, 108, 108, 111]); // "Hello"
+
+    await stream.write(arrayBuffer);
+    const chunk = stream.read();
+
+    expect(Buffer.isBuffer(chunk)).toBeTruthy();
+    expect(chunk.toString("UTF8")).toBe("Hello");
+  });
+
+  // Test other typed arrays (Int8Array, Uint16Array, etc.)
+  it("handles other typed arrays via ArrayBuffer.isView", async () => {
+    const stream = new StreamBuf();
+    // Create Int8Array with ASCII values for "Hi"
+    const int8Data = new Int8Array([72, 105]); // "Hi"
+
+    await stream.write(int8Data);
+    const chunk = stream.read();
+
+    expect(Buffer.isBuffer(chunk)).toBeTruthy();
+    expect(chunk.toString("UTF8")).toBe("Hi");
   });
 });

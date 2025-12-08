@@ -260,12 +260,22 @@ inherits(StreamBuf, Duplex as any, {
     // Use constructor name check for better ES6 module compatibility
     if (data instanceof StringBuf || (data && (data as any).constructor?.name === "StringBuf")) {
       chunk = new StringBufChunk(data as StringBuf);
-    } else if (data instanceof Buffer) {
+    } else if (Buffer.isBuffer(data)) {
+      // Use Buffer.isBuffer() instead of instanceof for cross-realm compatibility
+      // (e.g., Web Workers where Buffer polyfill instances may differ)
       chunk = new BufferChunk(data);
-    } else if (typeof data === "string" || data instanceof String || data instanceof ArrayBuffer) {
+    } else if (ArrayBuffer.isView(data)) {
+      // Handle typed arrays (Uint8Array, Int8Array, etc.) - cross-realm safe
+      chunk = new BufferChunk(Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+    } else if (data instanceof ArrayBuffer) {
+      // Handle ArrayBuffer - convert to Buffer
+      chunk = new BufferChunk(Buffer.from(data));
+    } else if (typeof data === "string" || data instanceof String) {
       chunk = new StringChunk(String(data), encoding as BufferEncoding);
     } else {
-      throw new Error("Chunk must be one of type String, Buffer or StringBuf.");
+      throw new Error(
+        "Chunk must be one of type String, Buffer, Uint8Array, ArrayBuffer or StringBuf."
+      );
     }
 
     // now, do something with the chunk
@@ -280,7 +290,8 @@ inherits(StreamBuf, Duplex as any, {
         callback();
       } else {
         this._writeToBuffers(chunk);
-        process.nextTick(callback);
+        // Use queueMicrotask for cross-platform compatibility (ES2020+)
+        queueMicrotask(() => callback());
       }
     } else {
       if (!this.paused) {
