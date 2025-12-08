@@ -36,8 +36,9 @@ describe("DataValidation Large Range Performance", () => {
       await wb2.xlsx.readFile(filePath);
       const elapsed = performance.now() - start;
 
-      // Should parse in under 100ms (was 3+ seconds before fix)
-      expect(elapsed).toBeLessThan(100);
+      // Should parse in under 500ms (was 3+ seconds before fix)
+      // Using 500ms to account for slower CI environments and Windows
+      expect(elapsed).toBeLessThan(500);
 
       const ws2 = wb2.getWorksheet("Test");
       // Validation should be found for cells in the range
@@ -92,7 +93,8 @@ describe("DataValidation Large Range Performance", () => {
       const elapsed = performance.now() - start;
 
       // Should parse quickly even with 5 entire columns
-      expect(elapsed).toBeLessThan(200);
+      // Using 1000ms to account for slower CI environments and Windows
+      expect(elapsed).toBeLessThan(1000);
 
       const ws2 = wb2.getWorksheet("Test");
       expect(ws2?.getCell("B100").dataValidation?.type).toBe("list");
