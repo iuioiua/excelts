@@ -790,24 +790,5 @@ export const utils = {
 
   // Workbook functions (camelCase)
   bookNew,
-  bookAppendSheet,
-
-  // xlsx compatibility aliases (snake_case)
-  decode_col: decodeCol,
-  encode_col: encodeCol,
-  decode_row: decodeRow,
-  encode_row: encodeRow,
-  decode_cell: decodeCell,
-  encode_cell: encodeCell,
-  decode_range: decodeRange,
-  encode_range: encodeRange,
-  json_to_sheet: jsonToSheet,
-  sheet_add_json: sheetAddJson,
-  sheet_to_json: sheetToJson,
-  sheet_to_csv: sheetToCsv,
-  aoa_to_sheet: aoaToSheet,
-  sheet_add_aoa: sheetAddAoa,
-  sheet_to_aoa: sheetToAoa,
-  book_new: bookNew,
-  book_append_sheet: bookAppendSheet
+  bookAppendSheet
 };
