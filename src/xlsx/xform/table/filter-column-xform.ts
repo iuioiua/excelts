@@ -72,6 +72,10 @@ class FilterColumnXform extends BaseXform {
           filterButton: attributes.hiddenButton === "0"
         };
         return true;
+      case "dynamicFilter":
+        // Ignore dynamicFilter nodes - we don't need to preserve them for reading
+        // See: https://github.com/exceljs/exceljs/issues/2972
+        return true;
       default:
         this.parser = this.map[node.name];
         if (this.parser) {
