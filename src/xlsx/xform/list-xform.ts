@@ -112,6 +112,13 @@ class ListXform extends BaseXform {
       });
     }
   }
+
+  reset(): void {
+    super.reset();
+    if (this.childXform) {
+      this.childXform.reset();
+    }
+  }
 }
 
 export { ListXform };

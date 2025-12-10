@@ -1,6 +1,7 @@
 import { BaseXform } from "../base-xform.js";
 import { CellXform } from "./cell-xform.js";
 import { parseBoolean } from "../../../utils/utils.js";
+import { colCache } from "../../../utils/col-cache.js";
 
 interface RowXformOptions {
   maxItems?: number;
@@ -26,6 +27,7 @@ class RowXform extends BaseXform {
   declare public model: RowModel;
   declare public parser: any;
   declare private numRowsSeen: number;
+  declare private lastCellCol: number;
 
   constructor(options?: RowXformOptions) {
     super();
@@ -38,6 +40,12 @@ class RowXform extends BaseXform {
 
   get tag(): string {
     return "row";
+  }
+
+  reset(): void {
+    super.reset();
+    this.numRowsSeen = 0;
+    this.lastCellCol = 0;
   }
 
   prepare(model: RowModel, options: any): void {
@@ -94,11 +102,15 @@ class RowXform extends BaseXform {
     }
     if (node.name === "row") {
       this.numRowsSeen += 1;
+      // Reset lastCellCol for each new row
+      this.lastCellCol = 0;
       const spans = node.attributes.spans
         ? node.attributes.spans.split(":").map((span: string) => parseInt(span, 10))
         : [undefined, undefined];
+      // If r attribute is missing, use numRowsSeen as the row number
+      const rowNumber = node.attributes.r ? parseInt(node.attributes.r, 10) : this.numRowsSeen;
       const model: RowModel = (this.model = {
-        number: parseInt(node.attributes.r, 10),
+        number: rowNumber,
         min: spans[0],
         max: spans[1],
         cells: []
@@ -141,7 +153,18 @@ class RowXform extends BaseXform {
   parseClose(name: string): boolean {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
-        this.model.cells.push(this.parser.model);
+        const cellModel = this.parser.model;
+        // If cell has address, extract column number from it
+        // Otherwise, calculate address based on position
+        if (cellModel.address) {
+          const decoded = colCache.decodeAddress(cellModel.address);
+          this.lastCellCol = decoded.col;
+        } else {
+          // No r attribute, calculate address from position
+          this.lastCellCol += 1;
+          cellModel.address = colCache.encodeAddress(this.model.number, this.lastCellCol);
+        }
+        this.model.cells.push(cellModel);
         if (this.maxItems && this.model.cells.length > this.maxItems) {
           throw new Error(`Max column count (${this.maxItems}) exceeded`);
         }
