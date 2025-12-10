@@ -1,12 +1,13 @@
 import events from "events";
-import { Zip, ZipPassThrough, ZipDeflate } from "fflate";
+import { ZipBuilder } from "./zip/index.js";
 import { StreamBuf } from "./stream-buf.js";
 
 interface ZipWriterOptions {
-  type?: string;
+  /** Compression method: "DEFLATE" (default) or "STORE" (no compression) */
   compression?: "DEFLATE" | "STORE";
   compressionOptions?: {
-    level?: number; // 0-9, where 0 is no compression, 9 is best compression
+    /** Compression level 0-9: 0=none, 1=fast (default), 9=best */
+    level?: number;
   };
 }
 
@@ -15,61 +16,31 @@ interface AppendOptions {
   base64?: boolean;
 }
 
-interface ZipFile {
-  data: Uint8Array;
-  isStream?: boolean;
-}
+type CompressionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 // =============================================================================
 // The ZipWriter class
 // Packs streamed data into an output zip stream
+// Uses native zlib (Node.js) or CompressionStream (browser) for best performance
 class ZipWriter extends events.EventEmitter {
-  options: ZipWriterOptions;
-  files: Record<string, ZipFile>;
-  stream: any;
-  zip: Zip;
-  finalized: boolean;
-  compressionLevel: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  private stream: InstanceType<typeof StreamBuf>;
+  private zipBuilder: ZipBuilder;
+  private finalized = false;
+  private pendingWrites: Promise<void>[] = [];
 
   constructor(options?: ZipWriterOptions) {
     super();
-    this.options = Object.assign(
-      {
-        type: "nodebuffer",
-        compression: "DEFLATE"
-      },
-      options
-    );
-    // Default compression level is 6 (good balance of speed and size)
-    // 0 = no compression, 9 = best compression
-    const level = this.options.compressionOptions?.level ?? 6;
-    this.compressionLevel = Math.max(0, Math.min(9, level)) as
-      | 0
-      | 1
-      | 2
-      | 3
-      | 4
-      | 5
-      | 6
-      | 7
-      | 8
-      | 9;
 
-    this.files = {};
+    // Determine compression level:
+    // - STORE mode = 0 (no compression)
+    // - DEFLATE mode = user level or default 1 (fast compression)
+    const level =
+      options?.compression === "STORE"
+        ? 0
+        : (Math.max(0, Math.min(9, options?.compressionOptions?.level ?? 1)) as CompressionLevel);
+
     this.stream = new StreamBuf();
-    this.finalized = false;
-
-    // Create fflate Zip instance for streaming compression
-    this.zip = new Zip((err, data, final) => {
-      if (err) {
-        this.stream.emit("error", err);
-      } else {
-        this.stream.write(Buffer.from(data));
-        if (final) {
-          this.stream.end();
-        }
-      }
-    });
+    this.zipBuilder = new ZipBuilder({ level });
   }
 
   append(data: any, options: AppendOptions): void {
@@ -83,7 +54,7 @@ class ZipWriter extends events.EventEmitter {
       // Convert string to Buffer - works in both environments
       buffer = Buffer.from(data, "utf8");
     } else if (Buffer.isBuffer(data)) {
-      // Buffer extends Uint8Array, fflate can use it directly - no copy needed
+      // Buffer extends Uint8Array, can use it directly - no copy needed
       buffer = data;
     } else if (ArrayBuffer.isView(data)) {
       // Handle typed arrays - create view without copy
@@ -96,14 +67,16 @@ class ZipWriter extends events.EventEmitter {
       buffer = data;
     }
 
-    // Add file to zip using streaming API
-    // Use ZipDeflate for compression or ZipPassThrough for no compression
-    const useCompression = this.options.compression !== "STORE";
-    const zipFile = useCompression
-      ? new ZipDeflate(options.name, { level: this.compressionLevel })
-      : new ZipPassThrough(options.name);
-    this.zip.add(zipFile);
-    zipFile.push(buffer, true); // true = final chunk
+    // Add file to zip using native compression
+    // addFile returns chunks that we write to stream immediately
+    const writePromise = this.zipBuilder
+      .addFile({ name: options.name, data: buffer })
+      .then(chunks => {
+        for (const chunk of chunks) {
+          this.stream.write(Buffer.from(chunk));
+        }
+      });
+    this.pendingWrites.push(writePromise);
   }
 
   push(chunk: any): boolean {
@@ -116,9 +89,16 @@ class ZipWriter extends events.EventEmitter {
     }
     this.finalized = true;
 
-    // End the zip stream
-    this.zip.end();
+    // Wait for all pending writes to complete
+    await Promise.all(this.pendingWrites);
 
+    // Finalize the zip and write central directory
+    const finalChunks = this.zipBuilder.finalize();
+    for (const chunk of finalChunks) {
+      this.stream.write(Buffer.from(chunk));
+    }
+
+    this.stream.end();
     this.emit("finish");
   }
 

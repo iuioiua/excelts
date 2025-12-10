@@ -6,6 +6,9 @@ const CLOSE_ANGLE = ">";
 const OPEN_ANGLE_SLASH = "</";
 const CLOSE_SLASH_ANGLE = "/>";
 
+// Chunk size for periodic consolidation (reduces final join overhead)
+const CHUNK_SIZE = 10000;
+
 interface Attributes {
   [key: string]: any;
 }
@@ -15,6 +18,7 @@ interface Rollback {
   stack: number;
   leaf: boolean;
   open: boolean;
+  chunksLength: number;
 }
 
 function pushAttribute(xml: string[], name: string, value: any): void {
@@ -35,6 +39,7 @@ function pushAttributes(xml: string[], attributes?: Attributes): void {
 
 class XmlStream {
   declare private _xml: string[];
+  declare private _chunks: string[];
   declare private _stack: string[];
   declare private _rollbacks: Rollback[];
   leaf?: boolean;
@@ -42,8 +47,17 @@ class XmlStream {
 
   constructor() {
     this._xml = [];
+    this._chunks = [];
     this._stack = [];
     this._rollbacks = [];
+  }
+
+  private _consolidate(): void {
+    // Periodically join small strings into larger chunks to reduce final join overhead
+    if (this._xml.length >= CHUNK_SIZE) {
+      this._chunks.push(this._xml.join(""));
+      this._xml = [];
+    }
   }
 
   get tos(): string | undefined {
@@ -52,7 +66,7 @@ class XmlStream {
 
   get cursor(): number {
     // handy way to track whether anything has been added
-    return this._xml.length;
+    return this._chunks.length * CHUNK_SIZE + this._xml.length;
   }
 
   openXml(docAttributes?: Attributes): void {
@@ -127,6 +141,7 @@ class XmlStream {
     }
     this.open = false;
     this.leaf = false;
+    this._consolidate();
   }
 
   leafNode(name: string, attributes?: Attributes, text?: any): void {
@@ -149,7 +164,8 @@ class XmlStream {
       xml: this._xml.length,
       stack: this._stack.length,
       leaf: this.leaf!,
-      open: this.open!
+      open: this.open!,
+      chunksLength: this._chunks.length
     });
     return this.cursor;
   }
@@ -166,13 +182,23 @@ class XmlStream {
     if (this._stack.length > r.stack) {
       this._stack.splice(r.stack, this._stack.length - r.stack);
     }
+    if (this._chunks.length > r.chunksLength) {
+      this._chunks.splice(r.chunksLength, this._chunks.length - r.chunksLength);
+    }
     this.leaf = r.leaf;
     this.open = r.open;
   }
 
   get xml(): string {
     this.closeAll();
-    return this._xml.join("");
+    // Join chunks first, then remaining xml array
+    if (this._chunks.length === 0) {
+      return this._xml.join("");
+    }
+    if (this._xml.length > 0) {
+      this._chunks.push(this._xml.join(""));
+    }
+    return this._chunks.join("");
   }
 
   static StdDocAttributes = {

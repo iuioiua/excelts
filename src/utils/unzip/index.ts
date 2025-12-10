@@ -11,3 +11,6 @@ export { bufferStream } from "./buffer-stream.js";
 export { parse as parseBuffer } from "./parse-buffer.js";
 export { parseDateTime } from "./parse-datetime.js";
 export { parseExtraField, type ExtraField, type ZipVars } from "./parse-extra-field.js";
+
+// Simple extraction API
+export { extractAll, extractFile, listFiles, forEachEntry, type ExtractedFile } from "./extract.js";
