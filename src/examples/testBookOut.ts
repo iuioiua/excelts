@@ -1,4 +1,5 @@
 import { Workbook } from "../index.js";
+import type { Fill } from "../index.js";
 import { HrStopwatch } from "./utils/hr-stopwatch.js";
 
 const [, , filename] = process.argv;
@@ -27,7 +28,7 @@ const fonts = {
     size: 14,
     color: { argb: "FFFFFFFF" }
   }
-};
+} as const;
 
 const alignments = [
   { text: "Top Left", alignment: { horizontal: "left", vertical: "top" } },
@@ -101,7 +102,7 @@ const alignments = [
       textRotation: "vertical"
     }
   }
-];
+] as const;
 // const badAlignments = [
 //  { text: 'Rotate -91', alignment: { textRotation: -91 } },
 //  { text: 'Rotate 91', alignment: { textRotation: 91 } },
@@ -142,7 +143,7 @@ const borders = {
     right: { style: "thin" },
     color: { argb: "FFFFFFFF" }
   }
-};
+} as const;
 
 const fills = {
   solidGreen: {
@@ -180,7 +181,7 @@ const fills = {
       { position: 1, color: { argb: "FF0000FF" } }
     ]
   }
-};
+} satisfies Record<string, Fill>;
 
 ws.columns = [
   { header: "Col 1", key: "key", width: 25 },

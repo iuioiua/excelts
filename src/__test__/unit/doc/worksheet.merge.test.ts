@@ -183,29 +183,26 @@ describe("Worksheet", () => {
       ws.mergeCells("A1:B2");
       ws.insertRow(1, ["Inserted Row Text"]);
 
-      const r2 = ws.getRow(2);
-      const r3 = ws.getRow(3);
+      // After insert, the merged area should now be A2:B3
+      // A2 is master (type=Number with value 1), B2, A3, B3 are merge cells
+      const cellA2 = ws.getCell("A2");
+      const cellB2 = ws.getCell("B2");
+      const cellA3 = ws.getCell("A3");
+      const cellB3 = ws.getCell("B3");
 
-      const cellVals = [];
-      for (const r of [r2, r3]) {
-        for (const cell of r._cells) {
-          cellVals.push(cell._value);
-        }
-      }
+      // Verify master cell has the number value
+      expect(cellA2.type).toEqual(Enums.ValueType.Number);
+      expect(cellA2.value).toEqual(1);
 
-      let nNumberVals = 0;
-      let nMergeVals = 0;
-      for (const cellVal of cellVals) {
-        const { name } = cellVal.constructor;
-        if (name === "NumberValue") {
-          nNumberVals += 1;
-        }
-        if (name === "MergeValue" && cellVal.model.master === "A2") {
-          nMergeVals += 1;
-        }
-      }
-      expect(nNumberVals).toEqual(1);
-      expect(nMergeVals).toEqual(3);
+      // Verify other cells in merge area are merge type and point to A2 address
+      expect(cellB2.type).toEqual(Enums.ValueType.Merge);
+      expect(cellB2.master.address).toEqual("A2");
+
+      expect(cellA3.type).toEqual(Enums.ValueType.Merge);
+      expect(cellA3.master.address).toEqual("A2");
+
+      expect(cellB3.type).toEqual(Enums.ValueType.Merge);
+      expect(cellB3.master.address).toEqual("A2");
     });
   });
 });

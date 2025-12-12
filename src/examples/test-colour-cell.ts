@@ -37,7 +37,7 @@ const fills = {
       { position: 1, color: { argb: "FF0000FF" } }
     ]
   }
-};
+} as const;
 
 ws.addRow([1, 2, 3, 4]);
 ws.addRow(["one", "two", "three", "four"]);

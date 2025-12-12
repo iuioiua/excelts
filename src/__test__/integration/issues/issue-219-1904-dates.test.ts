@@ -14,7 +14,7 @@ describe("github issues", () => {
         expect(wb.properties.date1904).toBe(true);
 
         const ws = wb.getWorksheet("Sheet1");
-        expect(ws.getCell("B4").value.toISOString()).toBe("1904-01-01T00:00:00.000Z");
+        expect((ws.getCell("B4").value as Date).toISOString()).toBe("1904-01-01T00:00:00.000Z");
       });
     });
     it("Writing and Reading", () => {

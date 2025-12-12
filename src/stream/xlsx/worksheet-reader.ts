@@ -20,9 +20,9 @@ class WorksheetReader extends EventEmitter {
   options: any;
   name: string;
   state?: string;
-  _columns: any[] | null;
-  _keys: { [key: string]: any };
-  _dimensions: any;
+  declare private _columns: any[] | null;
+  declare private _keys: { [key: string]: any };
+  declare private _dimensions: any;
   hyperlinks?: { [key: string]: any };
 
   constructor({ workbook, id, iterator, options }: WorksheetReaderOptions) {
@@ -82,7 +82,7 @@ class WorksheetReader extends EventEmitter {
     if (c > this._columns.length) {
       let n = this._columns.length + 1;
       while (n <= c) {
-        this._columns.push(new Column(this, n++));
+        this._columns.push(new Column(this as any, n++));
       }
     }
     return this._columns[c - 1];
@@ -197,7 +197,7 @@ class WorksheetReader extends EventEmitter {
               case "row":
                 if (inRows) {
                   const r = parseInt(node.attributes.r, 10);
-                  row = new Row(this, r);
+                  row = new Row(this as any, r);
                   if (node.attributes.ht) {
                     row.height = parseFloat(node.attributes.ht);
                   }

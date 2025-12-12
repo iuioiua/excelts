@@ -1,13 +1,25 @@
-import { Worksheet } from "./worksheet.js";
-import { DefinedNames } from "./defined-names.js";
+import { Worksheet, type WorksheetModel } from "./worksheet.js";
+import { DefinedNames, type DefinedNameModel } from "./defined-names.js";
 import { XLSX } from "../xlsx/xlsx.js";
 import { CSV } from "../csv/csv.js";
+import type { PivotTable } from "./pivot-table.js";
+import type {
+  AddWorksheetOptions,
+  CalculationProperties,
+  Image,
+  WorkbookProperties,
+  WorkbookView,
+  Buffer as ExcelBuffer
+} from "../types.js";
 
-interface WorksheetModel {
-  id: number;
-  name: string;
-  state?: string;
-  [key: string]: any;
+// Internal media type - more flexible than public Media type
+interface WorkbookMedia {
+  type: string;
+  extension: string;
+  filename?: string;
+  buffer?: ExcelBuffer;
+  base64?: string;
+  name?: string;
 }
 
 interface WorkbookModel {
@@ -16,11 +28,11 @@ interface WorkbookModel {
   lastPrinted?: Date;
   created: Date;
   modified: Date;
-  properties: any;
+  properties: Partial<WorkbookProperties>;
   worksheets: WorksheetModel[];
   sheets?: WorksheetModel[];
-  definedNames: any;
-  views: any[];
+  definedNames: DefinedNameModel[];
+  views: WorkbookView[];
   company: string;
   manager: string;
   title: string;
@@ -31,18 +43,10 @@ interface WorkbookModel {
   language?: string;
   revision?: number;
   contentStatus?: string;
-  themes?: any;
-  media: any[];
-  pivotTables: any[];
-  calcProperties: any;
-}
-
-interface AddWorksheetOptions {
-  properties?: any;
-  views?: any[];
-  pageSetup?: any;
-  headerFooter?: any;
-  [key: string]: any;
+  themes?: unknown;
+  media: WorkbookMedia[];
+  pivotTables: PivotTable[];
+  calcProperties: Partial<CalculationProperties>;
 }
 
 // Workbook requirements
@@ -59,24 +63,24 @@ class Workbook {
   declare public keywords: string;
   declare public manager: string;
   declare public modified: Date;
-  declare public properties: any;
-  declare public calcProperties: any;
-  declare public _worksheets: Worksheet[];
+  declare public properties: Partial<WorkbookProperties>;
+  declare public calcProperties: Partial<CalculationProperties>;
+  declare private _worksheets: Worksheet[];
   declare public subject: string;
   declare public title: string;
-  declare public views: any[];
-  declare public media: any[];
-  declare public pivotTables: any[];
-  declare public _definedNames: DefinedNames;
+  declare public views: WorkbookView[];
+  declare public media: WorkbookMedia[];
+  declare public pivotTables: PivotTable[];
+  declare private _definedNames: DefinedNames;
   declare public creator?: string;
   declare public lastModifiedBy?: string;
   declare public lastPrinted?: Date;
   declare public language?: string;
   declare public revision?: number;
   declare public contentStatus?: string;
-  declare public _themes?: any;
-  declare public _xlsx?: XLSX;
-  declare public _csv?: CSV;
+  declare private _themes?: unknown;
+  declare private _xlsx?: XLSX;
+  declare private _csv?: CSV;
 
   constructor() {
     this.category = "";
@@ -128,12 +132,13 @@ class Workbook {
       (acc, ws) => ((ws && ws.orderNo) > acc ? ws.orderNo : acc),
       0
     );
-    const worksheetOptions = Object.assign({}, options, {
+    const worksheetOptions = {
+      ...options,
       id,
       name,
       orderNo: lastOrderNo + 1,
       workbook: this
-    });
+    };
 
     const worksheet = new Worksheet(worksheetOptions);
 
@@ -188,15 +193,15 @@ class Workbook {
     this._themes = undefined;
   }
 
-  addImage(image: any): number {
+  addImage(image: Image): number {
     // TODO:  validation?
     const id = this.media.length;
-    this.media.push(Object.assign({}, image, { type: "image" }));
+    this.media.push({ ...image, type: "image" });
     return id;
   }
 
-  getImage(id: number): any {
-    return this.media[id];
+  getImage(id: number | string): WorkbookMedia | undefined {
+    return this.media[Number(id)];
   }
 
   get model(): WorkbookModel {
@@ -258,7 +263,7 @@ class Workbook {
         state,
         workbook: this
       }));
-      worksheet.model = worksheetModel as any;
+      worksheet.model = worksheetModel;
     });
 
     this._definedNames.model = value.definedNames;

@@ -340,7 +340,7 @@ class WorksheetWriter {
     let count = 1;
     const columns = (this._columns = []);
     value.forEach(defn => {
-      const column = new Column(this, count++, false as any);
+      const column = new Column(this as any, count++, false as any);
       columns.push(column);
       column.defn = defn;
     });
@@ -381,7 +381,7 @@ class WorksheetWriter {
     if (c > this._columns.length) {
       let n = this._columns.length + 1;
       while (n <= c) {
-        this._columns.push(new Column(this, n++));
+        this._columns.push(new Column(this as any, n++));
       }
     }
     return this._columns[c - 1];
@@ -450,13 +450,13 @@ class WorksheetWriter {
     }
     let row = this._rows![index];
     if (!row) {
-      this._rows![index] = row = new Row(this, rowNumber);
+      this._rows![index] = row = new Row(this as any, rowNumber);
     }
     return row;
   }
 
   addRow(value: any): any {
-    const row = new Row(this, this._nextRow);
+    const row = new Row(this as any, this._nextRow);
     this._rows![row.number - this._rowZero] = row;
     row.values = value;
     return row;

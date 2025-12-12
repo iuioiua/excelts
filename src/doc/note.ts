@@ -63,7 +63,7 @@ class Note {
       default:
         value = {
           type: "note",
-          note: this.note as NoteConfig
+          note: this.note
         };
         break;
     }

@@ -19,7 +19,7 @@ const borders = {
     bottom: { style: "double" },
     right: { style: "double" }
   }
-};
+} as const;
 
 ws.getCell("B2").value = "Hello";
 ws.mergeCells("B2:C2");

@@ -1,4 +1,5 @@
 import { colCache } from "../utils/col-cache.js";
+import type { Address } from "../types.js";
 
 interface RangeModel {
   top: number;
@@ -18,60 +19,107 @@ interface RowWithDimensions {
   dimensions?: RowDimensions;
 }
 
+// Input types for Range constructor and decode
+export type RangeInput = Range | RangeModel | string | number | RangeInput[];
+
 // used by worksheet to calculate sheet dimensions
 class Range {
-  model: RangeModel;
+  model: RangeModel = {
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0
+  };
 
-  constructor(...args: any[]) {
+  // Constructor overloads
+  constructor();
+  constructor(range: Range);
+  constructor(model: RangeModel);
+  constructor(rangeString: string);
+  constructor(args: RangeInput[]);
+  constructor(tl: string, br: string);
+  constructor(tl: string, br: string, sheetName: string);
+  constructor(top: number, left: number, bottom: number, right: number);
+  constructor(top: number, left: number, bottom: number, right: number, sheetName: string);
+  constructor(...args: RangeInput[]) {
     this.decode(args);
   }
 
+  // setTLBR overloads
+  setTLBR(tl: string, br: string, sheetName?: string): void;
+  setTLBR(top: number, left: number, bottom: number, right: number, sheetName?: string): void;
   setTLBR(
     t: number | string,
-    l?: number | string,
+    l: number | string,
     b?: number | string,
-    r?: number | string,
+    r?: number,
     s?: string
   ): void {
-    if (arguments.length < 4) {
-      // setTLBR(tl, br, s)
-      const tl = colCache.decodeAddress(t as string);
-      const br = colCache.decodeAddress(l as string);
+    if (typeof t === "string" && typeof l === "string") {
+      // setTLBR(tl, br, s) - t and l are address strings
+      const tl = colCache.decodeAddress(t);
+      const br = colCache.decodeAddress(l);
       this.model = {
         top: Math.min(tl.row, br.row),
         left: Math.min(tl.col, br.col),
         bottom: Math.max(tl.row, br.row),
         right: Math.max(tl.col, br.col),
-        sheetName: b as string | undefined
+        sheetName: typeof b === "string" ? b : undefined
       };
-
-      this.setTLBR(tl.row, tl.col, br.row, br.col, s);
-    } else {
-      // setTLBR(t, l, b, r, s)
+    } else if (
+      typeof t === "number" &&
+      typeof l === "number" &&
+      typeof b === "number" &&
+      typeof r === "number"
+    ) {
+      // setTLBR(t, l, b, r, s) - all numbers
       this.model = {
-        top: Math.min(t as number, b as number),
-        left: Math.min(l as number, r as number),
-        bottom: Math.max(t as number, b as number),
-        right: Math.max(l as number, r as number),
+        top: Math.min(t, b),
+        left: Math.min(l, r),
+        bottom: Math.max(t, b),
+        right: Math.max(l, r),
         sheetName: s
       };
     }
   }
 
-  decode(argv: any[]): void {
+  private decode(argv: RangeInput[]): void {
     switch (argv.length) {
       case 5: // [t,l,b,r,s]
-        this.setTLBR(argv[0], argv[1], argv[2], argv[3], argv[4]);
+        if (
+          typeof argv[0] === "number" &&
+          typeof argv[1] === "number" &&
+          typeof argv[2] === "number" &&
+          typeof argv[3] === "number" &&
+          typeof argv[4] === "string"
+        ) {
+          this.setTLBR(argv[0], argv[1], argv[2], argv[3], argv[4]);
+        }
         break;
       case 4: // [t,l,b,r]
-        this.setTLBR(argv[0], argv[1], argv[2], argv[3]);
+        if (
+          typeof argv[0] === "number" &&
+          typeof argv[1] === "number" &&
+          typeof argv[2] === "number" &&
+          typeof argv[3] === "number"
+        ) {
+          this.setTLBR(argv[0], argv[1], argv[2], argv[3]);
+        }
         break;
 
       case 3: // [tl,br,s]
-        this.setTLBR(argv[0], argv[1], argv[2]);
+        if (
+          typeof argv[0] === "string" &&
+          typeof argv[1] === "string" &&
+          typeof argv[2] === "string"
+        ) {
+          this.setTLBR(argv[0], argv[1], argv[2]);
+        }
         break;
       case 2: // [tl,br]
-        this.setTLBR(argv[0], argv[1]);
+        if (typeof argv[0] === "string" && typeof argv[1] === "string") {
+          this.setTLBR(argv[0], argv[1]);
+        }
         break;
 
       case 1: {
@@ -85,10 +133,16 @@ class Range {
             right: value.model.right,
             sheetName: value.sheetName
           };
-        } else if (value instanceof Array) {
+        } else if (Array.isArray(value)) {
           // an arguments array
           this.decode(value);
-        } else if (value.top && value.left && value.bottom && value.right) {
+        } else if (
+          typeof value === "object" &&
+          "top" in value &&
+          "left" in value &&
+          "bottom" in value &&
+          "right" in value
+        ) {
           // a model
           this.model = {
             top: value.top,
@@ -97,24 +151,26 @@ class Range {
             right: value.right,
             sheetName: value.sheetName
           };
-        } else {
+        } else if (typeof value === "string") {
           // [sheetName!]tl:br
-          const tlbr = colCache.decodeEx(value) as any;
-          if (tlbr.top) {
+          const decoded = colCache.decodeEx(value);
+          if ("top" in decoded) {
+            // It's a DecodedRange
             this.model = {
-              top: tlbr.top,
-              left: tlbr.left,
-              bottom: tlbr.bottom,
-              right: tlbr.right,
-              sheetName: tlbr.sheetName
+              top: decoded.top,
+              left: decoded.left,
+              bottom: decoded.bottom,
+              right: decoded.right,
+              sheetName: decoded.sheetName
             };
-          } else {
+          } else if ("row" in decoded) {
+            // It's an Address
             this.model = {
-              top: tlbr.row,
-              left: tlbr.col,
-              bottom: tlbr.row,
-              right: tlbr.col,
-              sheetName: tlbr.sheetName
+              top: decoded.row,
+              left: decoded.col,
+              bottom: decoded.row,
+              right: decoded.col,
+              sheetName: decoded.sheetName
             };
           }
         }
@@ -211,8 +267,10 @@ class Range {
   }
 
   expandToAddress(addressStr: string): void {
-    const address = colCache.decodeEx(addressStr) as any;
-    this.expand(address.row, address.col, address.row, address.col);
+    const address = colCache.decodeEx(addressStr);
+    if ("row" in address && "col" in address) {
+      this.expand(address.row, address.col, address.row, address.col);
+    }
   }
 
   get tl(): string {
@@ -276,10 +334,13 @@ class Range {
 
   contains(addressStr: string): boolean {
     const address = colCache.decodeEx(addressStr);
-    return this.containsEx(address as any);
+    if ("row" in address && "col" in address) {
+      return this.containsEx(address);
+    }
+    return false;
   }
 
-  containsEx(address: any): boolean {
+  containsEx(address: Address): boolean {
     if (address.sheetName && this.sheetName && address.sheetName !== this.sheetName) {
       return false;
     }

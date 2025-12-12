@@ -272,7 +272,7 @@ arrowsWS.addConditionalFormatting({
   rules: [
     {
       type: "iconSet",
-      iconSet: "3TrafficLights",
+      iconSet: "3TrafficLights1",
       cfvo: [
         { type: "percent", value: 0 },
         { type: "num", value: "COLUMN()" },
@@ -292,7 +292,7 @@ shapesWS.addConditionalFormatting({
   rules: [
     {
       type: "iconSet",
-      iconSet: "3TrafficLights",
+      iconSet: "3TrafficLights1",
       cfvo: [
         { type: "percent", value: 0 },
         { type: "percent", value: 33 },
@@ -326,7 +326,7 @@ shapesWS.addConditionalFormatting({
   rules: [
     {
       type: "iconSet",
-      iconSet: "3TrafficLights",
+      iconSet: "3TrafficLights1",
       showValue: false,
       cfvo: [
         { type: "percent", value: 0 },
@@ -343,7 +343,7 @@ shapesWS.addConditionalFormatting({
   rules: [
     {
       type: "iconSet",
-      iconSet: "3TrafficLights",
+      iconSet: "3TrafficLights1",
       reverse: true,
       cfvo: [
         { type: "percent", value: 0 },

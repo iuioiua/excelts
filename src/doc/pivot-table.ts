@@ -151,4 +151,4 @@ function makeCacheFields(worksheet: any, fieldNamesWithSharedItems: string[]): C
   return result;
 }
 
-export { makePivotTable };
+export { makePivotTable, type PivotTable, type PivotTableModel };

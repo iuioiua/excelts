@@ -2,9 +2,12 @@ import type { Address, Location } from "../types.js";
 
 const addressRegex = /^[A-Z]+\d+$/;
 
-type Range = Location & {
-  tl: string | Address;
-  br: string | Address;
+// Internal type with required $col$row for caching
+type CachedAddress = Address & { $col$row: string };
+
+export type DecodedRange = Location & {
+  tl: string | CachedAddress;
+  br: string | CachedAddress;
   dimensions: string;
   sheetName?: string;
 };
@@ -14,22 +17,22 @@ interface ErrorReference {
   sheetName?: string;
 }
 
-type DecodeExResult = Address | Range | ErrorReference;
+type DecodeExResult = CachedAddress | DecodedRange | ErrorReference;
 
 interface ColCache {
   _dictionary: string[];
   _l2nFill: number;
   _l2n: Record<string, number>;
   _n2l: string[];
-  _hash: Record<string, Address>;
+  _hash: Record<string, CachedAddress>;
   _level(n: number): number;
   _fill(level: number): void;
   l2n(l: string): number;
   n2l(n: number): string;
   validateAddress(value: string): boolean;
-  decodeAddress(value: string): Address;
-  getAddress(r: number | string, c?: number): Address;
-  decode(value: string): Address | Range;
+  decodeAddress(value: string): CachedAddress;
+  getAddress(r: number | string, c?: number): CachedAddress;
+  decode(value: string): CachedAddress | DecodedRange;
   decodeEx(value: string): DecodeExResult;
   encodeAddress(row: number, col: number): string;
   encode(...args: number[]): string;
@@ -147,7 +150,7 @@ const colCache: ColCache = {
 
   // =========================================================================
   // Address processing
-  _hash: {} as Record<string, Address>,
+  _hash: {} as Record<string, CachedAddress>,
 
   // check if value looks like an address
   validateAddress(value: string): boolean {
@@ -158,7 +161,7 @@ const colCache: ColCache = {
   },
 
   // convert address string into structure
-  decodeAddress(value: string): Address {
+  decodeAddress(value: string): CachedAddress {
     const addr = value.length < 5 && this._hash[value];
     if (addr) {
       return addr;
@@ -203,7 +206,7 @@ const colCache: ColCache = {
     // in case $row$col
     value = col + row;
 
-    const address: Address = {
+    const address: CachedAddress = {
       address: value,
       col: colNumber!,
       row: rowNumber!,
@@ -220,7 +223,7 @@ const colCache: ColCache = {
   },
 
   // convert r,c into structure (if only 1 arg, assume r is address string)
-  getAddress(r: number | string, c?: number): Address {
+  getAddress(r: number | string, c?: number): CachedAddress {
     if (c) {
       const address = this.n2l(c) + r;
       return this.decodeAddress(address);
@@ -234,7 +237,7 @@ const colCache: ColCache = {
     if (parts.length === 2) {
       const tl = this.decodeAddress(parts[0]);
       const br = this.decodeAddress(parts[1]);
-      const result: Range = {
+      const result: DecodedRange = {
         top: Math.min(tl.row, br.row),
         left: Math.min(tl.col, br.col),
         bottom: Math.max(tl.row, br.row),

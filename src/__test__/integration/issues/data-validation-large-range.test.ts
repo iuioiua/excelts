@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Workbook } from "../../../index.js";
+import type { DataValidationWithFormulae } from "../../../types.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -293,7 +294,9 @@ describe("DataValidation Large Range Performance", () => {
       await wb3.xlsx.readFile(filePath);
       const ws2Loaded = wb3.getWorksheet("Input");
 
-      const dv = ws2Loaded?.getCell("A100").dataValidation;
+      const dv = ws2Loaded?.getCell("A100").dataValidation as
+        | DataValidationWithFormulae
+        | undefined;
       expect(dv?.type).toBe("list");
       expect(dv?.formulae?.[0]).toBe("Data!$A$1:$A$3");
     });
@@ -324,10 +327,13 @@ describe("DataValidation Large Range Performance", () => {
       const ws2 = wb2.getWorksheet("Test");
 
       // Specific cell should have specific validation (direct match first)
-      expect(ws2?.getCell("B2").dataValidation?.formulae?.[0]).toBe("Specific");
+      const dvB2 = ws2?.getCell("B2").dataValidation as DataValidationWithFormulae | undefined;
+      const dvA1 = ws2?.getCell("A1").dataValidation as DataValidationWithFormulae | undefined;
+      const dvZ100 = ws2?.getCell("Z100").dataValidation as DataValidationWithFormulae | undefined;
+      expect(dvB2?.formulae?.[0]).toBe("Specific");
       // Other cells in range should have large range validation
-      expect(ws2?.getCell("A1").dataValidation?.formulae?.[0]).toBe("Large");
-      expect(ws2?.getCell("Z100").dataValidation?.formulae?.[0]).toBe("Large");
+      expect(dvA1?.formulae?.[0]).toBe("Large");
+      expect(dvZ100?.formulae?.[0]).toBe("Large");
     });
 
     it("should preserve all validation properties through round-trip", async () => {
@@ -356,7 +362,7 @@ describe("DataValidation Large Range Performance", () => {
       await wb2.xlsx.readFile(filePath);
       const ws2 = wb2.getWorksheet("Test");
 
-      const dv = ws2?.getCell("A500").dataValidation;
+      const dv = ws2?.getCell("A500").dataValidation as DataValidationWithFormulae | undefined;
       expect(dv?.type).toBe("list");
       expect(dv?.formulae).toEqual(["A,B,C"]);
       expect(dv?.allowBlank).toBe(true);

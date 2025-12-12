@@ -7,21 +7,38 @@ import type { Row } from "./row.js";
 import type { Column } from "./column.js";
 import type { Worksheet } from "./worksheet.js";
 import type { Workbook } from "./workbook.js";
+import type {
+  Style,
+  NumFmt,
+  Font,
+  Alignment,
+  Protection,
+  Borders,
+  Fill,
+  CellRichTextValue,
+  CellErrorValue,
+  DataValidation,
+  CellValue,
+  CellHyperlinkValue
+} from "../types.js";
+import type { DataValidations } from "./data-validations.js";
 
-interface HyperlinkValueData {
-  text?: string;
-  hyperlink?: string;
-  tooltip?: string;
-}
+// Alias for backward compatibility
+export type HyperlinkValueData = CellHyperlinkValue;
 
-interface FormulaValueData {
+export type FormulaResult = string | number | boolean | Date | CellErrorValue;
+
+// Extended formula type for internal use (includes shared formula fields)
+export interface FormulaValueData {
   shareType?: string;
   ref?: string;
   formula?: string;
   sharedFormula?: string;
-  result?: any;
+  result?: FormulaResult;
+  date1904?: boolean;
 }
 
+// FullAddress for Cell - only needs basic fields for defined names
 interface FullAddress {
   sheetName: string;
   address: string;
@@ -29,12 +46,44 @@ interface FullAddress {
   col: number;
 }
 
-interface CellModel {
+export interface CellAddress {
+  address: string;
+  row: number;
+  col: number;
+  $col$row?: string;
+}
+
+export interface NoteText {
+  text: string;
+  font?: Record<string, unknown>;
+}
+
+export interface NoteConfig {
+  texts?: NoteText[];
+  margins?: { insetmode?: string; inset?: number[] };
+  protection?: { locked?: string; lockText?: string };
+  editAs?: string;
+}
+
+export interface NoteModel {
+  type: string;
+  note: NoteConfig;
+}
+
+export interface CellModel {
   address: string;
   type: number;
-  value?: any;
-  style?: any;
-  comment?: any;
+  // Internal value storage - type depends on cell type
+  value?:
+    | number
+    | string
+    | boolean
+    | Date
+    | CellRichTextValue
+    | CellErrorValue
+    | HyperlinkValueData;
+  style?: Partial<Style>;
+  comment?: NoteModel;
   text?: string;
   hyperlink?: string;
   tooltip?: string;
@@ -43,12 +92,34 @@ interface CellModel {
   ref?: string;
   formula?: string;
   sharedFormula?: string;
-  result?: any;
-  richText?: any[];
-  sharedString?: any;
-  error?: any;
-  rawValue?: any;
+  result?: FormulaResult;
+  richText?: CellRichTextValue;
+  sharedString?: number;
+  error?: CellErrorValue;
+  rawValue?: unknown;
 }
+
+// Internal interface for Value type objects
+interface ICellValue {
+  model: CellModel;
+  value: CellValueType;
+  type: number;
+  effectiveType: number;
+  address: string;
+  formula?: string;
+  result?: FormulaResult;
+  formulaType?: number;
+  hyperlink?: string;
+  master?: Cell;
+  text?: string;
+  release(): void;
+  toCsvString(): string;
+  toString(): string;
+  isMergedTo?(master: Cell): boolean;
+}
+
+// Type for cell values (what users set/get) - alias for CellValue from types.ts
+export type CellValueType = CellValue;
 
 // Cell requirements
 //  Operate inside a worksheet
@@ -59,13 +130,15 @@ class Cell {
   static Types = Enums.ValueType;
 
   // Type declarations only - no runtime overhead
-  declare public _row: Row;
-  declare public _column: Column;
-  declare public _address: string;
-  declare public _value: any;
-  declare public style: Record<string, unknown>;
-  declare public _mergeCount: number;
-  declare public _comment?: any;
+  declare private _row: Row;
+  declare private _column: Column;
+  declare private _address: string;
+
+  declare private _value: ICellValue;
+  declare public style: Partial<Style>;
+  declare private _mergeCount: number;
+
+  declare private _comment?: Note;
 
   constructor(row: Row, column: Column, address: string) {
     if (!row || !column) {
@@ -105,55 +178,59 @@ class Cell {
 
   // =========================================================================
   // Styles stuff
-  get numFmt(): any {
+  get numFmt(): string | NumFmt | undefined {
     return this.style.numFmt;
   }
 
-  set numFmt(value: any) {
+  set numFmt(value: string | undefined) {
     this.style.numFmt = value;
   }
 
-  get font(): any {
+  get font(): Partial<Font> | undefined {
     return this.style.font;
   }
 
-  set font(value: any) {
+  set font(value: Partial<Font> | undefined) {
     this.style.font = value;
   }
 
-  get alignment(): any {
+  get alignment(): Partial<Alignment> | undefined {
     return this.style.alignment;
   }
 
-  set alignment(value: any) {
+  set alignment(value: Partial<Alignment> | undefined) {
     this.style.alignment = value;
   }
 
-  get border(): any {
+  get border(): Partial<Borders> | undefined {
     return this.style.border;
   }
 
-  set border(value: any) {
+  set border(value: Partial<Borders> | undefined) {
     this.style.border = value;
   }
 
-  get fill(): any {
+  get fill(): Fill | undefined {
     return this.style.fill;
   }
 
-  set fill(value: any) {
+  set fill(value: Fill | undefined) {
     this.style.fill = value;
   }
 
-  get protection(): any {
+  get protection(): Partial<Protection> | undefined {
     return this.style.protection;
   }
 
-  set protection(value: any) {
+  set protection(value: Partial<Protection> | undefined) {
     this.style.protection = value;
   }
 
-  _mergeStyle(rowStyle: any, colStyle: any, style: any): any {
+  private _mergeStyle(
+    rowStyle: Partial<Style>,
+    colStyle: Partial<Style>,
+    style: Partial<Style>
+  ): Partial<Style> {
     const numFmt = (rowStyle && rowStyle.numFmt) || (colStyle && colStyle.numFmt);
     if (numFmt) {
       style.numFmt = numFmt;
@@ -274,15 +351,15 @@ class Cell {
   }
 
   // return the value
-  get value(): any {
+  get value(): CellValueType {
     return this._value.value;
   }
 
   // set the value - can be number, string or raw
-  set value(v: any) {
+  set value(v: CellValueType) {
     // special case - merge cells set their master's value
     if (this.type === Cell.Types.Merge) {
-      this._value.master.value = v;
+      this._value.master!.value = v;
       return;
     }
 
@@ -292,12 +369,31 @@ class Cell {
     this._value = Value.create(Value.getType(v), this, v);
   }
 
-  get note(): string | undefined {
-    return this._comment && this._comment.note;
+  get note(): string | NoteConfig | undefined {
+    if (!this._comment) {
+      return undefined;
+    }
+    const noteValue = this._comment.note;
+    return noteValue;
   }
 
-  set note(note: string) {
+  set note(note: string | NoteConfig) {
     this._comment = new Note(note);
+  }
+
+  // Internal comment accessor for row operations
+  get comment(): Note | undefined {
+    return this._comment;
+  }
+
+  set comment(comment: Note | NoteConfig | undefined) {
+    if (comment === undefined) {
+      this._comment = undefined;
+    } else if (comment instanceof Note) {
+      this._comment = comment;
+    } else {
+      this._comment = new Note(comment);
+    }
   }
 
   get text(): string {
@@ -316,7 +412,7 @@ class Cell {
     // if this cell is a string, turn it into a Hyperlink
     if (this.type === Cell.Types.String) {
       this._value = Value.create(Cell.Types.Hyperlink, this, {
-        text: this._value.value,
+        text: String(this._value.value),
         hyperlink
       });
     }
@@ -328,7 +424,7 @@ class Cell {
     return this._value.formula;
   }
 
-  get result(): any {
+  get result(): FormulaResult | undefined {
     return this._value.result;
   }
 
@@ -382,15 +478,15 @@ class Cell {
 
   // =========================================================================
   // Data Validation stuff
-  get _dataValidations(): any {
+  private get _dataValidations(): DataValidations {
     return this.worksheet.dataValidations;
   }
 
-  get dataValidation(): any {
+  get dataValidation(): DataValidation | undefined {
     return this._dataValidations.find(this.address);
   }
 
-  set dataValidation(value: any) {
+  set dataValidation(value: DataValidation) {
     this._dataValidations.add(this.address, value);
   }
 
@@ -430,8 +526,87 @@ class Cell {
 // =============================================================================
 // Internal Value Types
 
+// Internal model interfaces for type safety within Value classes
+interface NullValueModel {
+  address: string;
+  type: number;
+}
+
+interface NumberValueModel {
+  address: string;
+  type: number;
+  value: number;
+}
+
+interface StringValueModel {
+  address: string;
+  type: number;
+  value: string;
+}
+
+interface DateValueModel {
+  address: string;
+  type: number;
+  value: Date;
+}
+
+interface BooleanValueModel {
+  address: string;
+  type: number;
+  value: boolean;
+}
+
+interface HyperlinkValueModel {
+  address: string;
+  type: number;
+  text?: string;
+  hyperlink?: string;
+  tooltip?: string;
+}
+
+interface MergeValueModel {
+  address: string;
+  type: number;
+  master?: string;
+}
+
+interface FormulaValueModel {
+  address: string;
+  type: number;
+  shareType?: string;
+  ref?: string;
+  formula?: string;
+  sharedFormula?: string;
+  result?: FormulaResult;
+}
+
+interface SharedStringValueModel {
+  address: string;
+  type: number;
+  value: number;
+}
+
+interface RichTextValueModel {
+  address: string;
+  type: number;
+  value: CellRichTextValue;
+}
+
+interface ErrorValueModel {
+  address: string;
+  type: number;
+  value: CellErrorValue;
+}
+
+interface JSONValueModel {
+  address: string;
+  type: number;
+  value: string;
+  rawValue: unknown;
+}
+
 class NullValue {
-  declare public model: CellModel;
+  declare public model: NullValueModel;
 
   constructor(cell: Cell) {
     this.model = {
@@ -476,7 +651,7 @@ class NullValue {
 }
 
 class NumberValue {
-  declare public model: CellModel;
+  declare public model: NumberValueModel;
 
   constructor(cell: Cell, value: number) {
     this.model = {
@@ -522,7 +697,7 @@ class NumberValue {
 }
 
 class StringValue {
-  declare public model: CellModel;
+  declare public model: StringValueModel;
 
   constructor(cell: Cell, value: string) {
     this.model = {
@@ -568,9 +743,9 @@ class StringValue {
 }
 
 class RichTextValue {
-  declare public model: CellModel;
+  declare public model: RichTextValueModel;
 
-  constructor(cell: Cell, value: any) {
+  constructor(cell: Cell, value: CellRichTextValue) {
     this.model = {
       address: cell.address,
       type: Cell.Types.String,
@@ -578,16 +753,16 @@ class RichTextValue {
     };
   }
 
-  get value(): any {
+  get value(): CellRichTextValue {
     return this.model.value;
   }
 
-  set value(value: any) {
+  set value(value: CellRichTextValue) {
     this.model.value = value;
   }
 
   toString(): string {
-    return this.model.value.richText.map((t: any) => t.text).join("");
+    return this.model.value.richText.map(t => t.text).join("");
   }
 
   get type(): number {
@@ -618,7 +793,7 @@ class RichTextValue {
 }
 
 class DateValue {
-  declare public model: CellModel;
+  declare public model: DateValueModel;
 
   constructor(cell: Cell, value: Date) {
     this.model = {
@@ -664,7 +839,7 @@ class DateValue {
 }
 
 class HyperlinkValue {
-  declare public model: CellModel;
+  declare public model: HyperlinkValueModel;
 
   constructor(cell: Cell, value?: HyperlinkValueData) {
     this.model = {
@@ -679,14 +854,11 @@ class HyperlinkValue {
   }
 
   get value(): HyperlinkValueData {
-    const v: HyperlinkValueData = {
-      text: this.model.text,
-      hyperlink: this.model.hyperlink
+    return {
+      text: this.model.text || "",
+      hyperlink: this.model.hyperlink || "",
+      tooltip: this.model.tooltip
     };
-    if (this.model.tooltip) {
-      v.tooltip = this.model.tooltip;
-    }
-    return v;
   }
 
   set value(value: HyperlinkValueData) {
@@ -741,8 +913,8 @@ class HyperlinkValue {
 }
 
 class MergeValue {
-  declare public model: CellModel;
-  declare public _master: Cell;
+  declare public model: MergeValueModel;
+  declare private _master: Cell;
 
   constructor(cell: Cell, master?: Cell) {
     this.model = {
@@ -750,17 +922,17 @@ class MergeValue {
       type: Cell.Types.Merge,
       master: master ? master.address : undefined
     };
-    this._master = master as Cell;
+    this._master = master;
     if (master) {
       master.addMergeRef();
     }
   }
 
-  get value(): any {
+  get value(): CellValueType {
     return this._master.value;
   }
 
-  set value(value: any) {
+  set value(value: CellValueType | Cell) {
     if (value instanceof Cell) {
       if (this._master) {
         this._master.releaseMergeRef();
@@ -811,8 +983,8 @@ class MergeValue {
 
 class FormulaValue {
   declare public cell: Cell;
-  declare public model: CellModel;
-  declare public _translatedFormula?: string;
+  declare public model: FormulaValueModel;
+  declare private _translatedFormula?: string;
 
   constructor(cell: Cell, value?: FormulaValueData) {
     this.cell = cell;
@@ -828,31 +1000,49 @@ class FormulaValue {
     };
   }
 
-  _copyModel(model: CellModel): any {
-    const copy: any = {};
-    const cp = (name: string) => {
-      const value = (model as any)[name];
-      if (value) {
-        copy[name] = value;
-      }
-    };
-    cp("formula");
-    cp("result");
-    cp("ref");
-    cp("shareType");
-    cp("sharedFormula");
+  private _copyModel(model: FormulaValueModel): FormulaValueData {
+    const copy: FormulaValueData = {};
+    if (model.formula) {
+      copy.formula = model.formula;
+    }
+    if (model.result !== undefined) {
+      copy.result = model.result;
+    }
+    if (model.ref) {
+      copy.ref = model.ref;
+    }
+    if (model.shareType) {
+      copy.shareType = model.shareType;
+    }
+    if (model.sharedFormula) {
+      copy.sharedFormula = model.sharedFormula;
+    }
     return copy;
   }
 
-  get value(): any {
+  get value(): FormulaValueData {
     return this._copyModel(this.model);
   }
 
-  set value(value: any) {
-    this.model = this._copyModel(value);
+  set value(value: FormulaValueData) {
+    if (value.formula) {
+      this.model.formula = value.formula;
+    }
+    if (value.result !== undefined) {
+      this.model.result = value.result;
+    }
+    if (value.ref) {
+      this.model.ref = value.ref;
+    }
+    if (value.shareType) {
+      this.model.shareType = value.shareType;
+    }
+    if (value.sharedFormula) {
+      this.model.sharedFormula = value.sharedFormula;
+    }
   }
 
-  validate(value: any): void {
+  validate(value: CellValueType): void {
     switch (Value.getType(value)) {
       case Cell.Types.Null:
       case Cell.Types.String:
@@ -896,11 +1086,11 @@ class FormulaValue {
     return Enums.FormulaType.None;
   }
 
-  get result(): any {
+  get result(): FormulaResult | undefined {
     return this.model.result;
   }
 
-  set result(value: any) {
+  set result(value: FormulaResult | undefined) {
     this.model.result = value;
   }
 
@@ -922,11 +1112,8 @@ class FormulaValue {
     if (v instanceof Date) {
       return Enums.ValueType.Date;
     }
-    if (v.text && v.hyperlink) {
-      return Enums.ValueType.Hyperlink;
-    }
-    if (v.formula) {
-      return Enums.ValueType.Formula;
+    if (typeof v === "object" && "error" in v) {
+      return Enums.ValueType.Error;
     }
 
     return Enums.ValueType.Null;
@@ -962,9 +1149,9 @@ class FormulaValue {
 }
 
 class SharedStringValue {
-  declare public model: CellModel;
+  declare public model: SharedStringValueModel;
 
-  constructor(cell: Cell, value: any) {
+  constructor(cell: Cell, value: number) {
     this.model = {
       address: cell.address,
       type: Cell.Types.SharedString,
@@ -972,11 +1159,11 @@ class SharedStringValue {
     };
   }
 
-  get value(): any {
+  get value(): number {
     return this.model.value;
   }
 
-  set value(value: any) {
+  set value(value: number) {
     this.model.value = value;
   }
 
@@ -1008,7 +1195,7 @@ class SharedStringValue {
 }
 
 class BooleanValue {
-  declare public model: CellModel;
+  declare public model: BooleanValueModel;
 
   constructor(cell: Cell, value: boolean) {
     this.model = {
@@ -1054,9 +1241,9 @@ class BooleanValue {
 }
 
 class ErrorValue {
-  declare public model: CellModel;
+  declare public model: ErrorValueModel;
 
-  constructor(cell: Cell, value: any) {
+  constructor(cell: Cell, value: CellErrorValue) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Error,
@@ -1064,11 +1251,11 @@ class ErrorValue {
     };
   }
 
-  get value(): any {
+  get value(): CellErrorValue {
     return this.model.value;
   }
 
-  set value(value: any) {
+  set value(value: CellErrorValue) {
     this.model.value = value;
   }
 
@@ -1100,9 +1287,9 @@ class ErrorValue {
 }
 
 class JSONValue {
-  declare public model: CellModel;
+  declare public model: JSONValueModel;
 
-  constructor(cell: Cell, value: any) {
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.String,
@@ -1111,11 +1298,11 @@ class JSONValue {
     };
   }
 
-  get value(): any {
+  get value(): unknown {
     return this.model.rawValue;
   }
 
-  set value(value: any) {
+  set value(value: unknown) {
     this.model.rawValue = value;
     this.model.value = JSON.stringify(value);
   }
@@ -1149,7 +1336,7 @@ class JSONValue {
 
 // Value is a place to hold common static Value type functions
 const Value = {
-  getType(value: any): number {
+  getType(value: CellValueType): number {
     if (value === null || value === undefined) {
       return Cell.Types.Null;
     }
@@ -1165,20 +1352,25 @@ const Value = {
     if (value instanceof Date) {
       return Cell.Types.Date;
     }
-    if (value.text && value.hyperlink) {
-      return Cell.Types.Hyperlink;
-    }
-    if (value.formula || value.sharedFormula) {
-      return Cell.Types.Formula;
-    }
-    if (value.richText) {
-      return Cell.Types.RichText;
-    }
-    if (value.sharedString) {
-      return Cell.Types.SharedString;
-    }
-    if (value.error) {
-      return Cell.Types.Error;
+    if (typeof value === "object") {
+      if ("text" in value && value.text && "hyperlink" in value && value.hyperlink) {
+        return Cell.Types.Hyperlink;
+      }
+      if (
+        ("formula" in value && value.formula) ||
+        ("sharedFormula" in value && value.sharedFormula)
+      ) {
+        return Cell.Types.Formula;
+      }
+      if ("richText" in value && value.richText) {
+        return Cell.Types.RichText;
+      }
+      if ("sharedString" in value && value.sharedString) {
+        return Cell.Types.SharedString;
+      }
+      if ("error" in value && value.error) {
+        return Cell.Types.Error;
+      }
     }
     return Cell.Types.JSON;
   },
@@ -1197,12 +1389,31 @@ const Value = {
     { t: Cell.Types.RichText, f: RichTextValue },
     { t: Cell.Types.Boolean, f: BooleanValue },
     { t: Cell.Types.Error, f: ErrorValue }
-  ].reduce((p: any[], t: any) => {
-    p[t.t] = t.f;
-    return p;
-  }, []),
+  ].reduce(
+    (
+      p: (
+        | typeof NullValue
+        | typeof NumberValue
+        | typeof StringValue
+        | typeof DateValue
+        | typeof HyperlinkValue
+        | typeof FormulaValue
+        | typeof MergeValue
+        | typeof JSONValue
+        | typeof SharedStringValue
+        | typeof RichTextValue
+        | typeof BooleanValue
+        | typeof ErrorValue
+      )[],
+      t
+    ) => {
+      p[t.t] = t.f;
+      return p;
+    },
+    []
+  ),
 
-  create(type: number, cell: Cell, value?: any): any {
+  create(type: number, cell: Cell, value?: CellValueType): ICellValue {
     const T = this.types[type];
     if (!T) {
       throw new Error(`Could not create Value of type ${type}`);

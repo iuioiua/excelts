@@ -242,12 +242,12 @@ describe("Workbook", () => {
 
       const imageId1 = wb.addImage({
         filename: IMAGE_FILENAME,
-        extension: "PNG"
+        extension: "png"
       });
 
       const imageId2 = wb.addImage({
         filename: IMAGE_FILENAME,
-        extension: "JPEG"
+        extension: "jpeg"
       });
 
       ws.addImage(imageId1, {

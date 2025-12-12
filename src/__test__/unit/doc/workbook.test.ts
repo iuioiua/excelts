@@ -77,7 +77,7 @@ describe("Workbook", () => {
     expect(ws.getCell("A1").value).toBe(ws.getCell("A3").value);
 
     // A1 and C2 should not reference the same object
-    expect(ws.getCell("A1").value).toBe(ws.getCell("C2").value.result);
+    expect(ws.getCell("A1").value).toBe(ws.getCell("C2").result);
   });
 
   it("assigns cell types properly", () => {

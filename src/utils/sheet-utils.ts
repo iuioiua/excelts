@@ -140,7 +140,9 @@ function formatValue(
  */
 function getCellDisplayText(cell: Cell, dateFormat?: string): string {
   const value = cell.value;
-  const fmt = cell.numFmt || "General";
+  const numFmt = cell.numFmt;
+  // Extract format code string from numFmt (which can be string or NumFmt object)
+  const fmt = typeof numFmt === "string" ? numFmt : (numFmt?.formatCode ?? "General");
 
   // Null/undefined
   if (value == null) {

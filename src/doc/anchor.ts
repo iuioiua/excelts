@@ -1,21 +1,42 @@
 import { colCache } from "../utils/col-cache.js";
 import type { Worksheet } from "./worksheet.js";
 
-interface SimpleAddress {
-  col?: number;
-  row?: number;
+interface AnchorModel {
+  nativeCol: number;
+  nativeRow: number;
+  nativeColOff: number;
+  nativeRowOff: number;
 }
 
-type AddressInput = string | Anchor | SimpleAddress | null | undefined;
+interface SimpleAddress {
+  col: number;
+  row: number;
+}
+
+type AddressInput = string | AnchorModel | SimpleAddress;
+
+function isAnchorModel(value: AddressInput): value is AnchorModel {
+  return (
+    typeof value === "object" &&
+    "nativeCol" in value &&
+    "nativeRow" in value &&
+    "nativeColOff" in value &&
+    "nativeRowOff" in value
+  );
+}
+
+function isSimpleAddress(value: AddressInput): value is SimpleAddress {
+  return typeof value === "object" && "col" in value && "row" in value;
+}
 
 class Anchor {
-  declare nativeCol: number;
-  declare nativeRow: number;
-  declare nativeColOff: number;
-  declare nativeRowOff: number;
-  declare worksheet?: Worksheet;
+  declare public nativeCol: number;
+  declare public nativeRow: number;
+  declare public nativeColOff: number;
+  declare public nativeRowOff: number;
+  declare public worksheet?: Worksheet;
 
-  constructor(worksheet?: Worksheet, address?: AddressInput, offset: number = 0) {
+  constructor(worksheet?: Worksheet, address?: AddressInput | null, offset: number = 0) {
     this.worksheet = worksheet;
 
     if (!address) {
@@ -29,16 +50,14 @@ class Anchor {
       this.nativeColOff = 0;
       this.nativeRow = decoded.row + offset;
       this.nativeRowOff = 0;
-    } else if ((address as Anchor).nativeCol !== undefined) {
-      const anchor = address as Anchor;
-      this.nativeCol = anchor.nativeCol || 0;
-      this.nativeColOff = anchor.nativeColOff || 0;
-      this.nativeRow = anchor.nativeRow || 0;
-      this.nativeRowOff = anchor.nativeRowOff || 0;
-    } else if ((address as SimpleAddress).col !== undefined) {
-      const simple = address as SimpleAddress;
-      this.col = simple.col! + offset;
-      this.row = simple.row! + offset;
+    } else if (isAnchorModel(address)) {
+      this.nativeCol = address.nativeCol || 0;
+      this.nativeColOff = address.nativeColOff || 0;
+      this.nativeRow = address.nativeRow || 0;
+      this.nativeRowOff = address.nativeRowOff || 0;
+    } else if (isSimpleAddress(address)) {
+      this.col = address.col + offset;
+      this.row = address.row + offset;
     } else {
       this.nativeCol = 0;
       this.nativeColOff = 0;
@@ -47,8 +66,14 @@ class Anchor {
     }
   }
 
-  static asInstance(model: any): Anchor | null {
-    return model instanceof Anchor || model == null ? model : new Anchor(undefined, model);
+  static asInstance(model: AddressInput | Anchor | null | undefined): Anchor | null {
+    if (model == null) {
+      return null;
+    }
+    if (model instanceof Anchor) {
+      return model;
+    }
+    return new Anchor(undefined, model);
   }
 
   get col(): number {
@@ -73,7 +98,7 @@ class Anchor {
     return this.worksheet &&
       this.worksheet.getColumn(this.nativeCol + 1) &&
       this.worksheet.getColumn(this.nativeCol + 1).isCustomWidth
-      ? Math.floor(this.worksheet.getColumn(this.nativeCol + 1).width * 10000)
+      ? Math.floor(this.worksheet.getColumn(this.nativeCol + 1).width! * 10000)
       : 640000;
   }
 
@@ -85,7 +110,7 @@ class Anchor {
       : 180000;
   }
 
-  get model(): Pick<Anchor, "nativeCol" | "nativeRow" | "nativeColOff" | "nativeRowOff"> {
+  get model(): AnchorModel {
     return {
       nativeCol: this.nativeCol,
       nativeColOff: this.nativeColOff,
@@ -94,7 +119,7 @@ class Anchor {
     };
   }
 
-  set model(value: Pick<Anchor, "nativeCol" | "nativeRow" | "nativeColOff" | "nativeRowOff">) {
+  set model(value: AnchorModel) {
     this.nativeCol = value.nativeCol;
     this.nativeColOff = value.nativeColOff;
     this.nativeRow = value.nativeRow;
@@ -103,6 +128,8 @@ class Anchor {
 }
 
 export { Anchor };
+export type { AnchorModel };
+
 type IAnchor = Pick<
   InstanceType<typeof Anchor>,
   "col" | "row" | "nativeCol" | "nativeRow" | "nativeColOff" | "nativeRowOff"

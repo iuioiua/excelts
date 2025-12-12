@@ -226,7 +226,7 @@ wb.xlsx.readFile(filename).then(() => {
   assertEqual("B2", "border", ws.getCell("B2").border, borders.thin);
 
   assert(
-    Math.abs(ws.getCell("C2").value + 5.55) < 0.000001,
+    Math.abs((ws.getCell("C2").value as number) + 5.55) < 0.000001,
     `Expected C2 == -5.55, was${ws.getCell("C2").value}`
   );
   assert(
@@ -242,11 +242,11 @@ wb.xlsx.readFile(filename).then(() => {
   assertEqual("D2", "border", ws.getCell("D2").border, borders.doubleRed);
 
   assert(ws.getCell("F2").value === true, "Expected F2 to be true");
-  assert(ws.getCell("G2").value.error === "#N/A", "Expected G2 to be #N/A");
-  assert(ws.getCell("H2").value.error === "#VALUE!", "Expected H2 to be #VALUE!");
+  assert((ws.getCell("G2").value as any).error === "#N/A", "Expected G2 to be #N/A");
+  assert((ws.getCell("H2").value as any).error === "#VALUE!", "Expected H2 to be #VALUE!");
 
   assert(
-    ws.getCell("C5").value.formula,
+    (ws.getCell("C5").value as any).formula,
     `Expected C5 to be a formula, was ${JSON.stringify(ws.getCell("C5").value)}`
   );
   assertEqual("C6", "border", ws.getCell("C6").border, borders.thickRainbow);

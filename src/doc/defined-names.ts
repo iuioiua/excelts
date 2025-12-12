@@ -1,16 +1,21 @@
-import { colCache } from "../utils/col-cache.js";
+import { colCache, type DecodedRange } from "../utils/col-cache.js";
 import { CellMatrix } from "../utils/cell-matrix.js";
 import { Range } from "./range.js";
+import type { Address } from "../types.js";
 
 const rangeRegexp = /[$](\w+)[$](\d+)(:[$](\w+)[$](\d+))?/;
 
-interface Cell {
+// Cell type for defined names - extends Address with mark for exploration algorithm
+interface DefinedNameCell {
   sheetName?: string;
   address: string;
   row: number;
   col: number;
   mark?: boolean;
 }
+
+// Location can be a single cell address or a range
+type CellLocation = Address | DecodedRange;
 
 interface DefinedNameModel {
   name: string;
@@ -32,12 +37,16 @@ class DefinedNames {
   // add a name to a cell. locStr in the form SheetName!$col$row or SheetName!$c1$r1:$c2:$r2
   add(locStr: string, name: string): void {
     const location = colCache.decodeEx(locStr);
-    this.addEx(location as any, name);
+    if ("error" in location) {
+      return; // Invalid reference, skip
+    }
+    this.addEx(location, name);
   }
 
-  addEx(location: any, name: string): void {
+  addEx(location: CellLocation, name: string): void {
     const matrix = this.getMatrix(name);
-    if (location.top) {
+    if ("top" in location) {
+      // It's a range (DecodedRange has top/left/bottom/right from Location)
       for (let col = location.left; col <= location.right; col++) {
         for (let row = location.top; row <= location.bottom; row++) {
           const address = {
@@ -51,46 +60,82 @@ class DefinedNames {
         }
       }
     } else {
+      // It's a single cell address
       matrix.addCellEx(location);
     }
   }
 
   remove(locStr: string, name: string): void {
     const location = colCache.decodeEx(locStr);
-    this.removeEx(location as any, name);
+    if ("error" in location) {
+      return; // Invalid reference, skip
+    }
+    this.removeEx(location, name);
   }
 
-  removeEx(location: any, name: string): void {
+  removeEx(location: CellLocation, name: string): void {
     const matrix = this.getMatrix(name);
-    matrix.removeCellEx(location);
+    if ("top" in location) {
+      // Range - remove each cell
+      for (let col = location.left; col <= location.right; col++) {
+        for (let row = location.top; row <= location.bottom; row++) {
+          matrix.removeCellEx({
+            sheetName: location.sheetName,
+            address: colCache.n2l(col) + row,
+            row,
+            col
+          });
+        }
+      }
+    } else {
+      matrix.removeCellEx(location);
+    }
   }
 
-  removeAllNames(location: any): void {
+  removeAllNames(location: CellLocation): void {
     Object.values(this.matrixMap).forEach((matrix: CellMatrix) => {
-      matrix.removeCellEx(location);
+      if ("top" in location) {
+        // Range - remove each cell
+        for (let col = location.left; col <= location.right; col++) {
+          for (let row = location.top; row <= location.bottom; row++) {
+            matrix.removeCellEx({
+              sheetName: location.sheetName,
+              address: colCache.n2l(col) + row,
+              row,
+              col
+            });
+          }
+        }
+      } else {
+        matrix.removeCellEx(location);
+      }
     });
   }
 
-  forEach(callback: (name: string, cell: Cell) => void): void {
+  forEach(callback: (name: string, cell: DefinedNameCell) => void): void {
     Object.entries(this.matrixMap).forEach(([name, matrix]) => {
-      matrix.forEach((cell: Cell) => {
-        callback(name as string, cell);
+      matrix.forEach((cell: DefinedNameCell) => {
+        callback(name, cell);
       });
     });
   }
 
   // get all the names of a cell
   getNames(addressStr: string): string[] {
-    return this.getNamesEx(colCache.decodeEx(addressStr) as any);
+    const location = colCache.decodeEx(addressStr);
+    if ("error" in location || "top" in location) {
+      return []; // Invalid reference or range not supported
+    }
+    return this.getNamesEx(location);
   }
 
-  getNamesEx(address: any): string[] {
+  getNamesEx(address: Address): string[] {
     return Object.entries(this.matrixMap)
       .map(([name, matrix]) => matrix.findCellEx(address, false) && name)
-      .filter(Boolean) as string[];
+      .filter((name): name is string => Boolean(name));
   }
 
-  _explore(matrix: CellMatrix, cell: Cell): Range {
+  _explore(matrix: CellMatrix, cell: DefinedNameCell): Range {
     cell.mark = false;
     const { sheetName } = cell;
 
@@ -98,9 +143,14 @@ class DefinedNames {
     let x: number;
     let y: number;
 
+    // Helper to get cell with proper type
+    const getCell = (row: number, col: number): DefinedNameCell | undefined => {
+      return matrix.findCellAt(sheetName!, row, col) as DefinedNameCell | undefined;
+    };
+
     // grow vertical - only one col to worry about
     function vGrow(yy: number, edge: "top" | "bottom"): boolean {
-      const c = matrix.findCellAt(sheetName!, yy, cell.col) as Cell | undefined;
+      const c = getCell(yy, cell.col);
       if (!c || !c.mark) {
         return false;
       }
@@ -113,9 +163,9 @@ class DefinedNames {
 
     // grow horizontal - ensure all rows can grow
     function hGrow(xx: number, edge: "left" | "right"): boolean {
-      const cells: Cell[] = [];
+      const cells: DefinedNameCell[] = [];
       for (y = range.top; y <= range.bottom; y++) {
-        const c = matrix.findCellAt(sheetName!, y, xx) as Cell | undefined;
+        const c = getCell(y, xx);
         if (c && c.mark) {
           cells.push(c);
         } else {
@@ -142,11 +192,11 @@ class DefinedNames {
     }
 
     // mark and sweep!
-    matrix.forEach((cell: Cell) => {
+    matrix.forEach((cell: DefinedNameCell) => {
       cell.mark = true;
     });
     const ranges = matrix
-      .map((cell: Cell) => cell.mark && this._explore(matrix!, cell))
+      .map((cell: DefinedNameCell) => cell.mark && this._explore(matrix!, cell))
       .filter(Boolean)
       .map((range: Range) => range.$shortRange);
 
@@ -159,15 +209,18 @@ class DefinedNames {
   normaliseMatrix(matrix: CellMatrix, sheetName: string): void {
     // some of the cells might have shifted on specified sheet
     // need to reassign rows, cols
-    matrix.forEachInSheet(sheetName, (cell: Cell | undefined, row: number, col: number) => {
-      if (cell) {
-        if (cell.row !== row || cell.col !== col) {
-          cell.row = row;
-          cell.col = col;
-          cell.address = colCache.n2l(col) + row;
+    matrix.forEachInSheet(
+      sheetName,
+      (cell: DefinedNameCell | undefined, row: number, col: number) => {
+        if (cell) {
+          if (cell.row !== row || cell.col !== col) {
+            cell.row = row;
+            cell.col = col;
+            cell.address = colCache.n2l(col) + row;
+          }
         }
       }
-    });
+    );
   }
 
   spliceRows(sheetName: string, start: number, numDelete: number, numInsert: number): void {
@@ -187,7 +240,7 @@ class DefinedNames {
   get model(): DefinedNameModel[] {
     // To get names per cell - just iterate over all names finding cells if they exist
     return Object.entries(this.matrixMap)
-      .map(([name, matrix]) => this.getRanges(name as string, matrix))
+      .map(([name, matrix]) => this.getRanges(name, matrix))
       .filter((definedName: DefinedNameModel) => definedName.ranges.length);
   }
 
@@ -205,4 +258,4 @@ class DefinedNames {
   }
 }
 
-export { DefinedNames };
+export { DefinedNames, type DefinedNameModel };

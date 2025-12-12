@@ -1,26 +1,27 @@
 import { colCache } from "../utils/col-cache.js";
 import { isEqual } from "../utils/under-dash.js";
 import { Enums } from "./enums.js";
-import type { Cell } from "./cell.js";
+import type { Cell, CellValueType } from "./cell.js";
 import type { Row } from "./row.js";
 import type { Worksheet } from "./worksheet.js";
+import type { Style, NumFmt, Font, Alignment, Protection, Borders, Fill } from "../types.js";
 
 const DEFAULT_COLUMN_WIDTH = 9;
 
-interface ColumnDefn {
-  header?: any;
+export interface ColumnDefn {
+  header?: string | string[];
   key?: string;
   width?: number;
   outlineLevel?: number;
   hidden?: boolean;
-  style?: any;
+  style?: Partial<Style>;
 }
 
-interface ColumnModel {
+export interface ColumnModel {
   min: number;
   max: number;
   width?: number;
-  style?: any;
+  style?: Partial<Style>;
   isCustomWidth?: boolean;
   hidden?: boolean;
   outlineLevel?: number;
@@ -31,16 +32,16 @@ interface ColumnModel {
 // This includes header rows, widths, key, (style), etc.
 // Worksheet will condense the columns as appropriate during serialization
 class Column {
-  declare public _worksheet: Worksheet;
-  declare public _number: number;
-  declare public _header: string | string[] | undefined;
-  declare public _key: string | undefined;
+  declare private _worksheet: Worksheet;
+  declare private _number: number;
+  declare private _header: string | string[] | undefined;
+  declare private _key: string | undefined;
   declare public width?: number;
-  declare public _hidden: boolean | undefined;
-  declare public _outlineLevel: number | undefined;
-  declare public style: Record<string, unknown>;
+  declare private _hidden: boolean | undefined;
+  declare private _outlineLevel: number | undefined;
+  declare public style: Partial<Style>;
 
-  constructor(worksheet: any, number: number, defn?: any) {
+  constructor(worksheet: Worksheet, number: number, defn?: ColumnDefn | false) {
     this._worksheet = worksheet;
     this._number = number;
     if (defn !== false) {
@@ -53,7 +54,7 @@ class Column {
     return this._number;
   }
 
-  get worksheet(): any {
+  get worksheet(): Worksheet {
     return this._worksheet;
   }
 
@@ -99,18 +100,24 @@ class Column {
     }
   }
 
-  get headers(): any[] {
-    return this._header && this._header instanceof Array ? this._header : [this._header];
+  get headers(): string[] {
+    if (Array.isArray(this._header)) {
+      return this._header;
+    }
+    if (this._header !== undefined) {
+      return [this._header];
+    }
+    return [];
   }
 
-  get header(): any {
+  get header(): string | string[] | undefined {
     return this._header;
   }
 
-  set header(value: any) {
+  set header(value: string | string[] | undefined) {
     if (value !== undefined) {
       this._header = value;
-      this.headers.forEach((text: any, index: number) => {
+      this.headers.forEach((text, index) => {
         this._worksheet.getCell(index + 1, this.number).value = text;
       });
     } else {
@@ -173,6 +180,15 @@ class Column {
     );
   }
 
+  equivalentToModel(model: ColumnModel): boolean {
+    return (
+      this.width === model.width &&
+      this.hidden === model.hidden &&
+      this.outlineLevel === model.outlineLevel &&
+      isEqual(this.style, model.style)
+    );
+  }
+
   get isDefault(): boolean {
     if (this.isCustomWidth) {
       return false;
@@ -211,9 +227,9 @@ class Column {
     );
   }
 
-  get values(): any[] {
-    const v: any[] = [];
-    this.eachCell((cell: any, rowNumber: number) => {
+  get values(): CellValueType[] {
+    const v: CellValueType[] = [];
+    this.eachCell((cell, rowNumber) => {
       if (cell && cell.type !== Enums.ValueType.Null) {
         v[rowNumber] = cell.value;
       }
@@ -221,7 +237,7 @@ class Column {
     return v;
   }
 
-  set values(v: any[]) {
+  set values(v: CellValueType[]) {
     if (!v) {
       return;
     }
@@ -231,67 +247,77 @@ class Column {
       // assume contiguous array, start at row 1
       offset = 1;
     }
-    v.forEach((value: any, index: number) => {
+    v.forEach((value, index) => {
       this._worksheet.getCell(index + offset, colNumber).value = value;
     });
   }
 
   // =========================================================================
   // styles
-  _applyStyle(name: string, value: any): any {
-    this.style[name] = value;
-    this.eachCell((cell: any) => {
-      cell[name] = value;
-    });
-    return value;
-  }
-
-  get numFmt(): any {
+  get numFmt(): string | NumFmt | undefined {
     return this.style.numFmt;
   }
 
-  set numFmt(value: any) {
-    this._applyStyle("numFmt", value);
+  set numFmt(value: string | undefined) {
+    this.style.numFmt = value;
+    this.eachCell(cell => {
+      cell.numFmt = value;
+    });
   }
 
-  get font(): any {
+  get font(): Partial<Font> | undefined {
     return this.style.font;
   }
 
-  set font(value: any) {
-    this._applyStyle("font", value);
+  set font(value: Partial<Font> | undefined) {
+    this.style.font = value;
+    this.eachCell(cell => {
+      cell.font = value;
+    });
   }
 
-  get alignment(): any {
+  get alignment(): Partial<Alignment> | undefined {
     return this.style.alignment;
   }
 
-  set alignment(value: any) {
-    this._applyStyle("alignment", value);
+  set alignment(value: Partial<Alignment> | undefined) {
+    this.style.alignment = value;
+    this.eachCell(cell => {
+      cell.alignment = value;
+    });
   }
 
-  get protection(): any {
+  get protection(): Partial<Protection> | undefined {
     return this.style.protection;
   }
 
-  set protection(value: any) {
-    this._applyStyle("protection", value);
+  set protection(value: Partial<Protection> | undefined) {
+    this.style.protection = value;
+    this.eachCell(cell => {
+      cell.protection = value;
+    });
   }
 
-  get border(): any {
+  get border(): Partial<Borders> | undefined {
     return this.style.border;
   }
 
-  set border(value: any) {
-    this._applyStyle("border", value);
+  set border(value: Partial<Borders> | undefined) {
+    this.style.border = value;
+    this.eachCell(cell => {
+      cell.border = value;
+    });
   }
 
-  get fill(): any {
+  get fill(): Fill | undefined {
     return this.style.fill;
   }
 
-  set fill(value: any) {
-    this._applyStyle("fill", value);
+  set fill(value: Fill | undefined) {
+    this.style.fill = value;
+    this.eachCell(cell => {
+      cell.fill = value;
+    });
   }
 
   // =============================================================================
@@ -307,7 +333,7 @@ class Column {
           if (col) {
             col = null;
           }
-        } else if (!col || !column.equivalentTo(col as any)) {
+        } else if (!col || !column.equivalentToModel(col)) {
           col = {
             min: index + 1,
             max: index + 1,
@@ -327,7 +353,7 @@ class Column {
     return cols.length ? cols : undefined;
   }
 
-  static fromModel(worksheet: any, cols: ColumnModel[]): Column[] | null {
+  static fromModel(worksheet: Worksheet, cols: ColumnModel[]): Column[] | null {
     cols = cols || [];
     const columns: Column[] = [];
     let count = 1;

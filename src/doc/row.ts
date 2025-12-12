@@ -1,54 +1,56 @@
 import { Enums } from "./enums.js";
 import { colCache } from "../utils/col-cache.js";
-import { Cell } from "./cell.js";
+import { Cell, type CellModel, type CellAddress } from "./cell.js";
 import type { Worksheet } from "./worksheet.js";
+import type { Column } from "./column.js";
+import type {
+  Style,
+  NumFmt,
+  Font,
+  Alignment,
+  Protection,
+  Borders,
+  Fill,
+  CellValue,
+  RowValues,
+  RowBreak
+} from "../types.js";
 
-interface CellAddress {
-  address: string;
-  row: number;
-  col: number;
-  $col$row?: string;
-}
-
+// Internal interface for row dimensions
 interface RowDimensions {
   min: number;
   max: number;
 }
 
-interface RowModel {
-  cells: any[];
+// Internal interface for row model (serialization)
+export interface RowModel {
+  cells: CellModel[];
   number: number;
   min: number;
   max: number;
   height?: number;
-  style: any;
+  style: Partial<Style>;
   hidden: boolean;
   outlineLevel: number;
   collapsed: boolean;
 }
 
-interface PageBreak {
-  id: number;
-  max: number;
-  man: number;
-  min?: number;
-}
-
+// Internal interface for eachCell options
 interface EachCellOptions {
   includeEmpty?: boolean;
 }
 
 class Row {
   // Type declarations only - no runtime overhead
-  declare public _worksheet: Worksheet;
-  declare public _number: number;
-  declare public _cells: (Cell | undefined)[];
-  declare public style: Record<string, unknown>;
-  declare public _hidden?: boolean;
-  declare public _outlineLevel?: number;
+  declare private _worksheet: Worksheet;
+  declare private _number: number;
+  declare private _cells: Cell[];
+  declare public style: Partial<Style>;
+  declare private _hidden?: boolean;
+  declare private _outlineLevel?: number;
   declare public height?: number;
 
-  constructor(worksheet: any, number: number) {
+  constructor(worksheet: Worksheet, number: number) {
     this._worksheet = worksheet;
     this._number = number;
     this._cells = [];
@@ -118,13 +120,13 @@ class Row {
   }
 
   // remove cell(s) and shift all higher cells down by count
-  splice(start: number, count: number, ...inserts: any[]): void {
+  splice(start: number, count: number, ...inserts: CellValue[]): void {
     const nKeep = start + count;
     const nExpand = inserts.length - count;
     const nEnd = this._cells.length;
     let i: number;
-    let cSrc: any;
-    let cDst: any;
+    let cSrc: Cell | undefined;
+    let cDst: Cell | undefined;
 
     if (nExpand < 0) {
       // remove cells
@@ -135,11 +137,11 @@ class Row {
           cDst = this.getCell(i);
           cDst.value = cSrc.value;
           cDst.style = cSrc.style;
-          cDst._comment = cSrc._comment;
+          cDst.comment = cSrc.comment;
         } else if (cDst) {
           cDst.value = null;
           cDst.style = {};
-          cDst._comment = undefined;
+          cDst.comment = undefined;
         }
       }
     } else if (nExpand > 0) {
@@ -150,7 +152,7 @@ class Row {
           cDst = this.getCell(i + nExpand);
           cDst.value = cSrc.value;
           cDst.style = cSrc.style;
-          cDst._comment = cSrc._comment;
+          cDst.comment = cSrc.comment;
         } else {
           this._cells[i + nExpand - 1] = undefined;
         }
@@ -162,7 +164,7 @@ class Row {
       cDst = this.getCell(start + i);
       cDst.value = inserts[i];
       cDst.style = {};
-      cDst._comment = undefined;
+      cDst.comment = undefined;
     }
   }
 
@@ -201,7 +203,7 @@ class Row {
     const ws = this._worksheet;
     const left = Math.max(0, (lft || 0) - 1) || 0;
     const right = Math.max(0, (rght || 0) - 1) || 16838;
-    const pb: PageBreak = {
+    const pb: RowBreak = {
       id: this._number,
       max: right,
       man: 1
@@ -214,8 +216,8 @@ class Row {
   }
 
   // return a sparse array of cell values
-  get values(): any[] {
-    const values: any[] = [];
+  get values(): CellValue[] {
+    const values: CellValue[] = [];
     this._cells.forEach(cell => {
       if (cell && cell.type !== Enums.ValueType.Null) {
         values[cell.col] = cell.value;
@@ -225,7 +227,7 @@ class Row {
   }
 
   // set the values by contiguous or sparse array, or by key'd object literal
-  set values(value: any[] | { [key: string]: any }) {
+  set values(value: RowValues) {
     // this operation is not additive - any prior cells are removed
     this._cells = [];
     if (!value) {
@@ -247,7 +249,7 @@ class Row {
       });
     } else {
       // assume object with column keys
-      this._worksheet.eachColumnKey((column: any, key: string) => {
+      this._worksheet.eachColumnKey((column: Column, key: string) => {
         if (value[key] !== undefined) {
           this.getCellEx({
             address: colCache.encodeAddress(this._number, column.number),
@@ -261,7 +263,7 @@ class Row {
 
   // returns true if the row includes at least one cell with a value
   get hasValues(): boolean {
-    return this._cells.some((cell: any) => cell && cell.type !== Enums.ValueType.Null);
+    return this._cells.some(cell => cell && cell.type !== Enums.ValueType.Null);
   }
 
   get cellCount(): number {
@@ -300,62 +302,73 @@ class Row {
 
   // =========================================================================
   // styles
-  _applyStyle(name: string, value: any): any {
+  private _applyStyle<K extends keyof Style>(name: K, value: Style[K]): void {
     this.style[name] = value;
     this._cells.forEach(cell => {
       if (cell) {
-        cell[name] = value;
+        cell.style[name] = value;
       }
     });
-    return value;
   }
 
-  get numFmt(): any {
+  get numFmt(): string | NumFmt | undefined {
     return this.style.numFmt;
   }
 
-  set numFmt(value: any) {
-    this._applyStyle("numFmt", value);
+  set numFmt(value: string | undefined) {
+    if (value !== undefined) {
+      this._applyStyle("numFmt", value);
+    }
   }
 
-  get font(): any {
+  get font(): Partial<Font> | undefined {
     return this.style.font;
   }
 
-  set font(value: any) {
-    this._applyStyle("font", value);
+  set font(value: Partial<Font> | undefined) {
+    if (value !== undefined) {
+      this._applyStyle("font", value);
+    }
   }
 
-  get alignment(): any {
+  get alignment(): Partial<Alignment> | undefined {
     return this.style.alignment;
   }
 
-  set alignment(value: any) {
-    this._applyStyle("alignment", value);
+  set alignment(value: Partial<Alignment> | undefined) {
+    if (value !== undefined) {
+      this._applyStyle("alignment", value);
+    }
   }
 
-  get protection(): any {
+  get protection(): Partial<Protection> | undefined {
     return this.style.protection;
   }
 
-  set protection(value: any) {
-    this._applyStyle("protection", value);
+  set protection(value: Partial<Protection> | undefined) {
+    if (value !== undefined) {
+      this._applyStyle("protection", value);
+    }
   }
 
-  get border(): any {
+  get border(): Partial<Borders> | undefined {
     return this.style.border;
   }
 
-  set border(value: any) {
-    this._applyStyle("border", value);
+  set border(value: Partial<Borders> | undefined) {
+    if (value !== undefined) {
+      this._applyStyle("border", value);
+    }
   }
 
-  get fill(): any {
+  get fill(): Fill | undefined {
     return this.style.fill;
   }
 
-  set fill(value: any) {
-    this._applyStyle("fill", value);
+  set fill(value: Fill | undefined) {
+    if (value !== undefined) {
+      this._applyStyle("fill", value);
+    }
   }
 
   get hidden(): boolean {
@@ -382,7 +395,7 @@ class Row {
 
   // =========================================================================
   get model(): RowModel | null {
-    const cells: any[] = [];
+    const cells: CellModel[] = [];
     let min = 0;
     let max = 0;
     this._cells.forEach(cell => {

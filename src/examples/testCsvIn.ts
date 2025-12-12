@@ -84,7 +84,7 @@ wb.csv.readFile(filename, options).then(() => {
   );
 
   assert(
-    Math.abs(ws.getCell("C2").value + 5.55) < 0.000001,
+    Math.abs((ws.getCell("C2").value as number) + 5.55) < 0.000001,
     `Expected C2 == -5.55, was ${ws.getCell("C2").value}`,
     ""
   );

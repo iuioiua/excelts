@@ -1,34 +1,25 @@
 import { colCache } from "../utils/col-cache.js";
-
-interface ColumnModel {
-  name: string;
-  filterButton?: boolean;
-  style?: any;
-  totalsRowLabel?: string;
-  totalsRowFunction?: string;
-  totalsRowResult?: any;
-  totalsRowFormula?: string;
-}
-
-interface TableStyle {
-  theme?: string;
-  name?: string;
-  showFirstColumn?: boolean;
-  showLastColumn?: boolean;
-  showRowStripes?: boolean;
-  showColumnStripes?: boolean;
-}
+import type {
+  Address,
+  CellFormulaValue,
+  CellValue,
+  Style,
+  TableColumnProperties,
+  TableStyleProperties
+} from "../types.js";
+import type { Worksheet } from "./worksheet.js";
+import type { Cell } from "./cell.js";
 
 interface TableModel {
   ref: string;
   name: string;
   displayName?: string;
-  columns: ColumnModel[];
-  rows: any[][];
+  columns: TableColumnProperties[];
+  rows: CellValue[][];
   headerRow?: boolean;
   totalsRow?: boolean;
-  style: TableStyle;
-  tl?: any;
+  style?: TableStyleProperties;
+  tl?: Address;
   autoFilterRef?: string;
   tableRef?: string;
 }
@@ -42,18 +33,21 @@ interface CacheState {
 class Column {
   // wrapper around column model, allowing access and manipulation
   table: Table;
-  column: ColumnModel;
+  column: TableColumnProperties;
   index: number;
 
-  constructor(table: Table, column: ColumnModel, index: number) {
+  constructor(table: Table, column: TableColumnProperties, index: number) {
     this.table = table;
     this.column = column;
     this.index = index;
   }
 
-  private _set(name: keyof ColumnModel, value: any): void {
+  private _set<K extends keyof TableColumnProperties>(
+    name: K,
+    value: TableColumnProperties[K]
+  ): void {
     this.table.cacheState();
-    (this.column as any)[name] = value;
+    this.column[name] = value;
   }
 
   get name(): string {
@@ -70,10 +64,10 @@ class Column {
     this.column.filterButton = value;
   }
 
-  get style(): any {
+  get style(): Partial<Style> | undefined {
     return this.column.style;
   }
-  set style(value: any) {
+  set style(value: Partial<Style> | undefined) {
     this.column.style = value;
   }
 
@@ -84,17 +78,17 @@ class Column {
     this._set("totalsRowLabel", value);
   }
 
-  get totalsRowFunction(): string | undefined {
+  get totalsRowFunction(): TableColumnProperties["totalsRowFunction"] {
     return this.column.totalsRowFunction;
   }
-  set totalsRowFunction(value: string | undefined) {
+  set totalsRowFunction(value: TableColumnProperties["totalsRowFunction"]) {
     this._set("totalsRowFunction", value);
   }
 
-  get totalsRowResult(): any {
+  get totalsRowResult(): CellValue {
     return this.column.totalsRowResult;
   }
-  set totalsRowResult(value: any) {
+  set totalsRowResult(value: CellFormulaValue["result"]) {
     this._set("totalsRowResult", value);
   }
 
@@ -107,11 +101,11 @@ class Column {
 }
 
 class Table {
-  worksheet: any;
-  table: TableModel;
+  worksheet: Worksheet;
+  table!: TableModel;
   declare private _cache?: CacheState;
 
-  constructor(worksheet: any, table?: TableModel) {
+  constructor(worksheet: Worksheet, table?: TableModel) {
     this.worksheet = worksheet;
     if (table) {
       this.table = table;
@@ -122,7 +116,7 @@ class Table {
     }
   }
 
-  getFormula(column: ColumnModel): string | null {
+  getFormula(column: TableColumnProperties): string | null {
     // get the correct formula to apply to the totals row
     switch (column.totalsRowFunction) {
       case "none":
@@ -173,7 +167,7 @@ class Table {
   validate(): void {
     const { table } = this;
     // set defaults and check is valid
-    const assign = (o: any, name: string, dflt: any) => {
+    const assign = <T extends object, K extends keyof T>(o: T, name: K, dflt: T[K]): void => {
       if (o[name] === undefined) {
         o[name] = dflt;
       }
@@ -224,11 +218,9 @@ class Table {
   store(): void {
     // where the table needs to store table data, headers, footers in
     // the sheet...
-    const assignStyle = (cell: any, style: any) => {
+    const assignStyle = (cell: Cell, style: Partial<Style> | undefined): void => {
       if (style) {
-        Object.keys(style).forEach(key => {
-          cell.style[key] = style[key];
-        });
+        Object.assign(cell.style, style);
       }
     };
 
@@ -277,10 +269,10 @@ class Table {
     }
   }
 
-  load(worksheet: any): void {
+  load(worksheet: Worksheet): void {
     // where the table will read necessary features from a loaded sheet
     const { table } = this;
-    const { row, col } = table.tl;
+    const { row, col } = table.tl!;
     let count = 0;
     if (table.headerRow) {
       const r = worksheet.getRow(row + count++);
@@ -378,7 +370,7 @@ class Table {
     this.store();
   }
 
-  addRow(values: any[], rowNumber?: number): void {
+  addRow(values: CellValue[], rowNumber?: number): void {
     // Add a row of data, either insert at rowNumber or append
     this.cacheState();
 
@@ -400,7 +392,7 @@ class Table {
     return new Column(this, column, colIndex);
   }
 
-  addColumn(column: ColumnModel, values: any[], colIndex?: number): void {
+  addColumn(column: TableColumnProperties, values: CellValue[], colIndex?: number): void {
     // Add a new column, including column defn and values
     // Inserts at colNumber or adds to the right
     this.cacheState();
@@ -428,7 +420,7 @@ class Table {
     });
   }
 
-  private _assign(target: any, prop: string, value: any): void {
+  private _assign<T extends object, K extends keyof T>(target: T, prop: K, value: T[K]): void {
     this.cacheState();
     target[prop] = value;
   }
@@ -469,10 +461,10 @@ class Table {
   }
 
   get theme(): string | undefined {
-    return this.table.style.name;
+    return this.table.style.theme;
   }
   set theme(value: string | undefined) {
-    this.table.style.name = value;
+    this.table.style.theme = value;
   }
 
   get showFirstColumn(): boolean | undefined {
@@ -504,4 +496,4 @@ class Table {
   }
 }
 
-export { Table };
+export { Table, type TableModel };

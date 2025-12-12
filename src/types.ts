@@ -3,12 +3,11 @@
  * This file exports all public types used by the library
  */
 
-import type { IAnchor } from "./doc/anchor.js";
-
 // ============================================================================
-// Buffer type for browser compatibility
+// Buffer type for cross-platform compatibility
+// Node.js Buffer extends Uint8Array, so Uint8Array is the common interface
 // ============================================================================
-export type Buffer = ArrayBuffer;
+export type Buffer = Uint8Array;
 
 // ============================================================================
 // Paper Size Enum
@@ -166,13 +165,33 @@ export type Fill = FillPattern | FillGradientAngle | FillGradientPath;
 // ============================================================================
 // Style Type
 // ============================================================================
-export interface Style {
-  numFmt: string;
+export interface NumFmt {
+  id: number;
+  formatCode: string;
+}
+
+// Base style properties shared between input and output
+interface StyleBase {
   font: Partial<Font>;
   alignment: Partial<Alignment>;
   protection: Partial<Protection>;
   border: Partial<Borders>;
   fill: Fill;
+}
+
+// Input style - used when setting styles (accepts string for numFmt)
+export interface StyleInput extends StyleBase {
+  numFmt: string;
+}
+
+// Output style - returned when reading styles (numFmt is an object with id)
+export interface StyleOutput extends StyleBase {
+  numFmt: NumFmt;
+}
+
+// Combined style type for backwards compatibility
+export interface Style extends StyleBase {
+  numFmt: string | NumFmt;
 }
 
 // ============================================================================
@@ -233,13 +252,13 @@ export interface HeaderFooter {
 // Worksheet View Types
 // ============================================================================
 export interface WorksheetViewCommon {
-  rightToLeft: boolean;
-  activeCell: string;
-  showRuler: boolean;
-  showRowColHeaders: boolean;
-  showGridLines: boolean;
-  zoomScale: number;
-  zoomScaleNormal: number;
+  rightToLeft?: boolean;
+  activeCell?: string;
+  showRuler?: boolean;
+  showRowColHeaders?: boolean;
+  showGridLines?: boolean;
+  zoomScale?: number;
+  zoomScaleNormal?: number;
 }
 
 export interface WorksheetViewNormal {
@@ -364,6 +383,16 @@ export interface CellFormulaValue {
   date1904?: boolean;
 }
 
+/** Array formula that spans multiple cells */
+export interface CellArrayFormulaValue {
+  formula: string;
+  result?: number | string | boolean | Date | CellErrorValue;
+  /** Must be "array" for array formulas */
+  shareType: "array";
+  /** The range this array formula applies to, e.g. "A1:B2" */
+  ref: string;
+}
+
 export interface CellSharedFormulaValue {
   sharedFormula: string;
   readonly formula?: string;
@@ -382,6 +411,7 @@ export type CellValue =
   | CellRichTextValue
   | CellHyperlinkValue
   | CellFormulaValue
+  | CellArrayFormulaValue
   | CellSharedFormulaValue;
 
 // ============================================================================
@@ -419,11 +449,9 @@ export type DataValidationOperator =
   | "greaterThanOrEqual"
   | "lessThanOrEqual";
 
-export interface DataValidation {
-  type: "list" | "whole" | "decimal" | "date" | "textLength" | "custom";
-  formulae: any[];
+/** Base properties shared by all data validation types */
+interface DataValidationBase {
   allowBlank?: boolean;
-  operator?: DataValidationOperator;
   error?: string;
   errorTitle?: string;
   errorStyle?: string;
@@ -432,6 +460,20 @@ export interface DataValidation {
   showErrorMessage?: boolean;
   showInputMessage?: boolean;
 }
+
+/** Data validation that requires formulae and operator */
+export interface DataValidationWithFormulae extends DataValidationBase {
+  type: "list" | "whole" | "decimal" | "date" | "textLength" | "custom";
+  formulae: any[];
+  operator?: DataValidationOperator;
+}
+
+/** Data validation type 'any' - no formulae needed */
+export interface DataValidationAny extends DataValidationBase {
+  type: "any";
+}
+
+export type DataValidation = DataValidationWithFormulae | DataValidationAny;
 
 // ============================================================================
 // Image Types
@@ -443,15 +485,36 @@ export interface Image {
   buffer?: Buffer;
 }
 
-export interface ImageRange {
-  tl: IAnchor;
-  br: IAnchor;
-}
-
 export interface ImagePosition {
   tl: { col: number; row: number };
   ext: { width: number; height: number };
 }
+
+/** Anchor position for image placement */
+export interface ImageAnchor {
+  col: number;
+  row: number;
+  nativeCol?: number;
+  nativeRow?: number;
+  nativeColOff?: number;
+  nativeRowOff?: number;
+}
+
+/** Range input for addImage - can be a string like "A1:B2" or an object */
+export type AddImageRange =
+  | string
+  | {
+      /** Top-left anchor position */
+      tl: ImageAnchor | string;
+      /** Bottom-right anchor position (optional if ext is provided) */
+      br?: ImageAnchor | string;
+      /** Image dimensions (alternative to br) */
+      ext?: { width: number; height: number };
+      /** How the image behaves when cells are resized */
+      editAs?: "oneCell" | "twoCell" | "absolute";
+      /** Hyperlink for the image */
+      hyperlinks?: { hyperlink?: string; tooltip?: string };
+    };
 
 export interface ImageHyperlinkValue {
   hyperlink: string;
@@ -473,7 +536,7 @@ export type Address = {
   address: string;
   col: number;
   row: number;
-  $col$row: string;
+  $col$row?: string;
 };
 
 // ============================================================================
@@ -540,11 +603,11 @@ export type CfvoTypes =
 
 export interface Cvfo {
   type: CfvoTypes;
-  value?: number;
+  value?: number | string;
 }
 
 export interface ConditionalFormattingBaseRule {
-  priority: number;
+  priority?: number;
   style?: Partial<Style>;
 }
 
@@ -563,12 +626,12 @@ export interface Top10RuleType extends ConditionalFormattingBaseRule {
   type: "top10";
   rank: number;
   percent: boolean;
-  bottom: boolean;
+  bottom?: boolean;
 }
 
 export interface AboveAverageRuleType extends ConditionalFormattingBaseRule {
   type: "aboveAverage";
-  aboveAverage: boolean;
+  aboveAverage?: boolean;
 }
 
 export interface ColorScaleRuleType extends ConditionalFormattingBaseRule {
@@ -609,6 +672,7 @@ export interface DataBarRuleType extends ConditionalFormattingBaseRule {
   axisPosition?: "auto" | "middle" | "none";
   direction?: "context" | "leftToRight" | "rightToLeft";
   cfvo?: Cvfo[];
+  color?: Partial<Color>;
 }
 
 export type ConditionalFormattingRule =
@@ -621,6 +685,11 @@ export type ConditionalFormattingRule =
   | ContainsTextRuleType
   | TimePeriodRuleType
   | DataBarRuleType;
+
+export interface ConditionalFormattingOptions {
+  ref: string;
+  rules: ConditionalFormattingRule[];
+}
 
 export interface ConditionalFormattingOptions {
   ref: string;
@@ -654,6 +723,7 @@ export interface TableColumnProperties {
     | "sum"
     | "custom";
   totalsRowFormula?: string;
+  totalsRowResult?: CellFormulaValue["result"];
   style?: Partial<Style>;
 }
 
@@ -729,6 +799,6 @@ export type DefinedNamesModel = DefinedNamesRanges[];
 export interface RowBreak {
   id: number;
   max: number;
-  min: number;
+  min?: number;
   man: number;
 }

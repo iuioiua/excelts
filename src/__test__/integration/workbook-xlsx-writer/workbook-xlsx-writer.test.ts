@@ -425,10 +425,11 @@ describe("WorkbookWriter", () => {
       expect(ws2.getCell("B2").value).toBe(5);
       expect(ws2.getCell("B2").note).toBe("five");
       expect(ws2.getCell("D2").value).toBe(7);
-      expect(ws2.getCell("D2").note.texts).toEqual(note.texts);
-      expect(ws2.getCell("D2").note.margins).toEqual(note.margins);
-      expect(ws2.getCell("D2").note.protection).toEqual(note.protection);
-      expect(ws2.getCell("D2").note.editAs).toEqual(note.editAs);
+      const note2 = ws2.getCell("D2").note as typeof note;
+      expect(note2.texts).toEqual(note.texts);
+      expect(note2.margins).toEqual(note.margins);
+      expect(note2.protection).toEqual(note.protection);
+      expect(note2.editAs).toEqual(note.editAs);
     });
 
     it("Cell annotation supports setting margins and protection properties", async () => {
@@ -473,10 +474,11 @@ describe("WorkbookWriter", () => {
       expect(ws2.getCell("B2").note).toBe("five");
 
       expect(ws2.getCell("D2").value).toBe(7);
-      expect(ws2.getCell("D2").note.texts).toEqual(note.texts);
-      expect(ws2.getCell("D2").note.margins).toEqual(note.margins);
-      expect(ws2.getCell("D2").note.protection).toEqual(note.protection);
-      expect(ws2.getCell("D2").note.editAs).toEqual(note.editAs);
+      const note2 = ws2.getCell("D2").note as typeof note;
+      expect(note2.texts).toEqual(note.texts);
+      expect(note2.margins).toEqual(note.margins);
+      expect(note2.protection).toEqual(note.protection);
+      expect(note2.editAs).toEqual(note.editAs);
     });
 
     it("with background image", async () => {
@@ -572,9 +574,14 @@ describe("WorkbookWriter", () => {
 
       // verify that rules from generated file contain styles with valid numFmt
       cf2.rules.forEach(rule => {
-        expect(rule.style.numFmt).toBeDefined();
-        expect(rule.style.numFmt.id).to.be.a("number");
-        expect(rule.style.numFmt.formatCode).to.be.a("string");
+        const numFmt = rule.style?.numFmt;
+        expect(numFmt).toBeDefined();
+        // After reading from file, numFmt is always a NumFmt object (not string)
+        expect(typeof numFmt).toBe("object");
+        if (typeof numFmt === "object" && numFmt !== null) {
+          expect(numFmt.id).to.be.a("number");
+          expect(numFmt.formatCode).to.be.a("string");
+        }
       });
     });
   });
