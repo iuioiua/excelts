@@ -1,10 +1,10 @@
 /**
  * Simple ZIP extraction utilities
  * Provides easy-to-use Promise-based API for extracting ZIP files
+ * Works in both Node.js and browser environments
  */
 
-import { Readable } from "stream";
-import { createParse, type ZipEntry } from "./parse.js";
+import { ZipParser, type ZipEntryInfo } from "./zip-parser.js";
 
 /**
  * Extracted file entry
@@ -12,8 +12,8 @@ import { createParse, type ZipEntry } from "./parse.js";
 export interface ExtractedFile {
   /** File path within the ZIP */
   path: string;
-  /** File content as Buffer */
-  data: Buffer;
+  /** File content as Uint8Array */
+  data: Uint8Array;
   /** Whether this is a directory */
   isDirectory: boolean;
   /** Uncompressed size */
@@ -23,7 +23,7 @@ export interface ExtractedFile {
 /**
  * Extract all files from a ZIP buffer
  *
- * @param zipData - ZIP file data as Buffer or Uint8Array
+ * @param zipData - ZIP file data as Buffer, Uint8Array, or ArrayBuffer
  * @returns Map of file paths to their content
  *
  * @example
@@ -39,37 +39,19 @@ export interface ExtractedFile {
  * ```
  */
 export async function extractAll(
-  zipData: Buffer | Uint8Array
+  zipData: Uint8Array | ArrayBuffer
 ): Promise<Map<string, ExtractedFile>> {
   const files = new Map<string, ExtractedFile>();
-  const buffer = Buffer.isBuffer(zipData) ? zipData : Buffer.from(zipData);
+  const parser = new ZipParser(zipData);
 
-  const parse = createParse({ forceStream: true });
-  const stream = Readable.from([buffer]);
-
-  stream.pipe(parse);
-
-  for await (const entry of parse) {
-    const zipEntry = entry as ZipEntry;
-    const isDirectory = zipEntry.type === "Directory";
-
-    if (isDirectory) {
-      files.set(zipEntry.path, {
-        path: zipEntry.path,
-        data: Buffer.alloc(0),
-        isDirectory: true,
-        size: 0
-      });
-      zipEntry.autodrain();
-    } else {
-      const data = await zipEntry.buffer();
-      files.set(zipEntry.path, {
-        path: zipEntry.path,
-        data,
-        isDirectory: false,
-        size: data.length
-      });
-    }
+  for (const entry of parser.getEntries()) {
+    const data = await parser.extract(entry.path);
+    files.set(entry.path, {
+      path: entry.path,
+      data: data || new Uint8Array(0),
+      isDirectory: entry.isDirectory,
+      size: entry.uncompressedSize
+    });
   }
 
   return files;
@@ -78,9 +60,9 @@ export async function extractAll(
 /**
  * Extract a single file from a ZIP buffer
  *
- * @param zipData - ZIP file data as Buffer or Uint8Array
+ * @param zipData - ZIP file data as Buffer, Uint8Array, or ArrayBuffer
  * @param filePath - Path of the file to extract
- * @returns File content as Buffer, or null if not found
+ * @returns File content as Uint8Array, or null if not found
  *
  * @example
  * ```ts
@@ -89,40 +71,22 @@ export async function extractAll(
  * const zipData = fs.readFileSync("archive.zip");
  * const content = await extractFile(zipData, "readme.txt");
  * if (content) {
- *   console.log(content.toString("utf-8"));
+ *   console.log(new TextDecoder().decode(content));
  * }
  * ```
  */
 export async function extractFile(
-  zipData: Buffer | Uint8Array,
+  zipData: Uint8Array | ArrayBuffer,
   filePath: string
-): Promise<Buffer | null> {
-  const buffer = Buffer.isBuffer(zipData) ? zipData : Buffer.from(zipData);
-  const parse = createParse({ forceStream: true });
-  const stream = Readable.from([buffer]);
-
-  stream.pipe(parse);
-
-  for await (const entry of parse) {
-    const zipEntry = entry as ZipEntry;
-
-    if (zipEntry.path === filePath) {
-      if (zipEntry.type === "Directory") {
-        return Buffer.alloc(0);
-      }
-      return zipEntry.buffer();
-    }
-
-    zipEntry.autodrain();
-  }
-
-  return null;
+): Promise<Uint8Array | null> {
+  const parser = new ZipParser(zipData);
+  return parser.extract(filePath);
 }
 
 /**
  * List all file paths in a ZIP buffer (without extracting content)
  *
- * @param zipData - ZIP file data as Buffer or Uint8Array
+ * @param zipData - ZIP file data as Buffer, Uint8Array, or ArrayBuffer
  * @returns Array of file paths
  *
  * @example
@@ -134,27 +98,15 @@ export async function extractFile(
  * console.log(paths); // ["file1.txt", "folder/file2.txt", ...]
  * ```
  */
-export async function listFiles(zipData: Buffer | Uint8Array): Promise<string[]> {
-  const paths: string[] = [];
-  const buffer = Buffer.isBuffer(zipData) ? zipData : Buffer.from(zipData);
-  const parse = createParse({ forceStream: true });
-  const stream = Readable.from([buffer]);
-
-  stream.pipe(parse);
-
-  for await (const entry of parse) {
-    const zipEntry = entry as ZipEntry;
-    paths.push(zipEntry.path);
-    zipEntry.autodrain();
-  }
-
-  return paths;
+export async function listFiles(zipData: Uint8Array | ArrayBuffer): Promise<string[]> {
+  const parser = new ZipParser(zipData);
+  return parser.listFiles();
 }
 
 /**
  * Iterate over ZIP entries with a callback (memory efficient for large ZIPs)
  *
- * @param zipData - ZIP file data as Buffer or Uint8Array
+ * @param zipData - ZIP file data as Buffer, Uint8Array, or ArrayBuffer
  * @param callback - Async callback for each entry, return false to stop iteration
  *
  * @example
@@ -164,46 +116,25 @@ export async function listFiles(zipData: Buffer | Uint8Array): Promise<string[]>
  * await forEachEntry(zipData, async (path, getData) => {
  *   if (path.endsWith(".xml")) {
  *     const content = await getData();
- *     console.log(content.toString("utf-8"));
+ *     console.log(new TextDecoder().decode(content));
  *   }
  *   return true; // continue iteration
  * });
  * ```
  */
 export async function forEachEntry(
-  zipData: Buffer | Uint8Array,
+  zipData: Uint8Array | ArrayBuffer,
   callback: (
     path: string,
-    getData: () => Promise<Buffer>,
-    entry: ZipEntry
+    getData: () => Promise<Uint8Array>,
+    entry: ZipEntryInfo
   ) => Promise<boolean | void>
 ): Promise<void> {
-  const buffer = Buffer.isBuffer(zipData) ? zipData : Buffer.from(zipData);
-  const parse = createParse({ forceStream: true });
-  const stream = Readable.from([buffer]);
-
-  stream.pipe(parse);
-
-  for await (const entry of parse) {
-    const zipEntry = entry as ZipEntry;
-
-    let dataPromise: Promise<Buffer> | null = null;
-    const getData = () => {
-      if (!dataPromise) {
-        dataPromise = zipEntry.buffer();
-      }
-      return dataPromise;
-    };
-
-    const shouldContinue = await callback(zipEntry.path, getData, zipEntry);
-
-    // If callback didn't read data, drain it
-    if (!dataPromise) {
-      zipEntry.autodrain();
-    }
-
-    if (shouldContinue === false) {
-      break;
-    }
-  }
+  const parser = new ZipParser(zipData);
+  await parser.forEach(async (entry, getData) => {
+    return callback(entry.path, getData, entry);
+  });
 }
+
+// Re-export ZipParser for advanced usage
+export { ZipParser, type ZipEntryInfo, type ZipParseOptions } from "./zip-parser.js";

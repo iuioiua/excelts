@@ -22,8 +22,9 @@ describe("extract", () => {
 
       const contentTypes = files.get("[Content_Types].xml");
       expect(contentTypes).toBeDefined();
-      expect(contentTypes!.data.toString("utf-8")).toContain("<?xml");
-      expect(contentTypes!.data.toString("utf-8")).toContain("ContentType");
+      const text = new TextDecoder().decode(contentTypes!.data);
+      expect(text).toContain("<?xml");
+      expect(text).toContain("ContentType");
     });
 
     it("should handle Uint8Array input", async () => {
@@ -51,7 +52,7 @@ describe("extract", () => {
       const content = await extractFile(zipData, "[Content_Types].xml");
 
       expect(content).not.toBeNull();
-      expect(content!.toString("utf-8")).toContain("<?xml");
+      expect(new TextDecoder().decode(content!)).toContain("<?xml");
     });
 
     it("should return null for non-existent file", async () => {
@@ -66,7 +67,7 @@ describe("extract", () => {
       const content = await extractFile(zipData, "xl/workbook.xml");
 
       expect(content).not.toBeNull();
-      expect(content!.toString("utf-8")).toContain("workbook");
+      expect(new TextDecoder().decode(content!)).toContain("workbook");
     });
   });
 
@@ -108,7 +109,7 @@ describe("extract", () => {
       await forEachEntry(zipData, async (path, getData) => {
         if (path === "[Content_Types].xml") {
           const data = await getData();
-          contentTypesContent = data.toString("utf-8");
+          contentTypesContent = new TextDecoder().decode(data);
         }
       });
 
@@ -129,18 +130,19 @@ describe("extract", () => {
       expect(paths.length).toBe(2);
     });
 
-    it("should provide ZipEntry for advanced use", async () => {
+    it("should provide ZipEntryInfo for advanced use", async () => {
       const zipData = readFileSync(testFilePath);
-      let hasVars = false;
+      let hasEntryInfo = false;
 
       await forEachEntry(zipData, async (_path, _getData, entry) => {
-        if (entry.vars) {
-          hasVars = true;
+        // ZipEntryInfo provides detailed info about the entry
+        if (entry.compressedSize !== undefined && entry.uncompressedSize !== undefined) {
+          hasEntryInfo = true;
           return false;
         }
       });
 
-      expect(hasVars).toBe(true);
+      expect(hasEntryInfo).toBe(true);
     });
   });
 });

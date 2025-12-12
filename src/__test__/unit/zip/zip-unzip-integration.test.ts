@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import { createZip, createZipSync, ZipBuilder } from "../../../utils/zip/index.js";
 import { extractAll, extractFile, listFiles } from "../../../utils/unzip/index.js";
 
+// Helper to decode Uint8Array to string
+const decode = (data: Uint8Array): string => new TextDecoder().decode(data);
+
 /**
  * Integration tests to verify that ZIP files created by our native implementation
  * can be correctly read by the unzip module's new simple API
@@ -16,7 +19,7 @@ describe("zip integration with unzip", () => {
 
       expect(files.size).toBe(1);
       expect(files.has("hello.txt")).toBe(true);
-      expect(files.get("hello.txt")!.data.toString("utf-8")).toBe("Hello, World!");
+      expect(decode(files.get("hello.txt")!.data)).toBe("Hello, World!");
     });
 
     it("should handle multiple files roundtrip", async () => {
@@ -33,11 +36,9 @@ describe("zip integration with unzip", () => {
       const files = await extractAll(zipData);
 
       expect(files.size).toBe(3);
-      expect(files.get("file1.txt")!.data.toString("utf-8")).toBe("Content of file 1");
-      expect(files.get("dir/file2.txt")!.data.toString("utf-8")).toBe(
-        "Content of file 2\nwith newline"
-      );
-      expect(files.get("dir/subdir/file3.txt")!.data.toString("utf-8")).toBe("Third file");
+      expect(decode(files.get("file1.txt")!.data)).toBe("Content of file 1");
+      expect(decode(files.get("dir/file2.txt")!.data)).toBe("Content of file 2\nwith newline");
+      expect(decode(files.get("dir/subdir/file3.txt")!.data)).toBe("Third file");
     });
 
     it("should handle large file roundtrip", async () => {
@@ -75,7 +76,7 @@ describe("zip integration with unzip", () => {
 
       const files = await extractAll(zipData);
 
-      expect(files.get("stored.txt")!.data.toString("utf-8")).toBe("Uncompressed content");
+      expect(decode(files.get("stored.txt")!.data)).toBe("Uncompressed content");
     });
 
     it("should handle unicode content roundtrip", async () => {
@@ -84,7 +85,7 @@ describe("zip integration with unzip", () => {
 
       const files = await extractAll(zipData);
 
-      expect(files.get("unicode.txt")!.data.toString("utf-8")).toBe("你好世界 🌍 مرحبا العالم");
+      expect(decode(files.get("unicode.txt")!.data)).toBe("你好世界 🌍 مرحبا العالم");
     });
 
     it("should handle unicode filenames roundtrip", async () => {
@@ -94,7 +95,7 @@ describe("zip integration with unzip", () => {
       const files = await extractAll(zipData);
 
       expect(files.has("文件/中文名.txt")).toBe(true);
-      expect(files.get("文件/中文名.txt")!.data.toString("utf-8")).toBe("Content");
+      expect(decode(files.get("文件/中文名.txt")!.data)).toBe("Content");
     });
   });
 
@@ -105,7 +106,7 @@ describe("zip integration with unzip", () => {
 
       const files = await extractAll(zipData);
 
-      expect(files.get("sync.txt")!.data.toString("utf-8")).toBe("Sync created content");
+      expect(decode(files.get("sync.txt")!.data)).toBe("Sync created content");
     });
   });
 
@@ -136,8 +137,8 @@ describe("zip integration with unzip", () => {
       const files = await extractAll(zipData);
 
       expect(files.size).toBe(2);
-      expect(files.get("stream1.txt")!.data.toString("utf-8")).toBe("Streaming file 1");
-      expect(files.get("stream2.txt")!.data.toString("utf-8")).toBe("Streaming file 2");
+      expect(decode(files.get("stream1.txt")!.data)).toBe("Streaming file 1");
+      expect(decode(files.get("stream2.txt")!.data)).toBe("Streaming file 2");
     });
   });
 
@@ -153,7 +154,7 @@ describe("zip integration with unzip", () => {
       const extracted = await extractFile(zipData, "target.txt");
 
       expect(extracted).not.toBeNull();
-      expect(extracted!.toString("utf-8")).toBe("Target file content");
+      expect(decode(extracted!)).toBe("Target file content");
     });
 
     it("should return null for non-existent file", async () => {
@@ -193,9 +194,7 @@ describe("zip integration with unzip", () => {
         const zipData = await createZip([{ name: "test.txt", data: content }], { level });
 
         const files = await extractAll(zipData);
-        expect(files.get("test.txt")!.data.toString("utf-8")).toBe(
-          "Test content for compression levels"
-        );
+        expect(decode(files.get("test.txt")!.data)).toBe("Test content for compression levels");
       }
     });
   });
@@ -248,9 +247,9 @@ describe("zip integration with unzip", () => {
       const files = await extractAll(zipData);
 
       expect(files.size).toBe(3);
-      expect(files.get("[Content_Types].xml")!.data.toString("utf-8")).toContain("content-types");
-      expect(files.get("xl/workbook.xml")!.data.toString("utf-8")).toContain("Sheet1");
-      expect(files.get("xl/worksheets/sheet1.xml")!.data.toString("utf-8")).toContain("Hello");
+      expect(decode(files.get("[Content_Types].xml")!.data)).toContain("content-types");
+      expect(decode(files.get("xl/workbook.xml")!.data)).toContain("Sheet1");
+      expect(decode(files.get("xl/worksheets/sheet1.xml")!.data)).toContain("Hello");
     });
   });
 });
