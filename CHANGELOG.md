@@ -7,6 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-12-13
+
+### Added
+
+- `ZipParser` class for cross-platform ZIP parsing (browser + Node.js)
+- `extractAll`, `extractFile`, `listFiles`, `forEachEntry` now work in browser environments
+- Native `DecompressionStream` support for browser decompression
+- Comprehensive tests for new zip-parser module
+
+### Changed
+
+- Refactored `extract.ts` to use `ZipParser` instead of Node.js streams
+- Updated tests to use `TextDecoder` instead of `Buffer.toString()`
+
+### Removed
+
+- Unused `global.d.ts` type declarations
+
+### Breaking Changes
+
+- `extractAll`, `extractFile`, `forEachEntry` now return `Uint8Array` instead of `Buffer`
+
+## [1.4.5] - 2025-12-10
+
+### Added
+
+- Proper typing for `Row` and `Cell` classes with JSDoc comments
+- Type safety improvements across `Row`, `Cell`, `Anchor`, `Column`, `Range`, `Image`, `Table` and stream classes
+
+### Changed
+
+- Relaxed return types for row methods (`getRow`, `findRow`, `eachRow`) to improve flexibility
+
+## [1.4.4] - 2025-12-08
+
+### Changed
+
+- Replaced fflate with native zlib for ZIP compression (performance improvement)
+
+### Fixed
+
+- Ignore dynamicFilter nodes in filterColumn parsing (#2972)
+- Prevent memory overflow when loading files with many definedNames (#2925)
+- Prevent string formula results from being converted to date (#2970)
+- Handle missing `r` attribute in row and cell elements (#2961)
+
+## [1.4.3] - 2025-12-05
+
+### Fixed
+
+- Date and duration format handling
+
+## [1.4.2] - 2025-12-04
+
+### Changed
+
+- Relaxed performance test thresholds for CI and Windows compatibility
+
+## [1.4.1] - 2025-12-03
+
+### Changed
+
+- Optimized parsing of large data validation ranges (performance improvement)
+
+## [1.4.0] - 2025-12-02
+
+### Changed
+
+- Code cleanup and optimizations
+
+## [1.3.0] - 2025-11-28
+
+### Changed
+
+- Updated all dependencies to latest versions
+
+### Added
+
+- Cell format parser
+- Improved browser compatibility
+
+## [1.1.0] - 2025-11-15
+
+### Added
+
+- Major improvements and bug fixes
+
 ## [1.0.0] - 2025-10-30
 
 ### 🎉 First Stable Release
