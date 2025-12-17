@@ -4,12 +4,25 @@ import { Enums } from "./enums.js";
 import type { Cell, CellValueType } from "./cell.js";
 import type { Row } from "./row.js";
 import type { Worksheet } from "./worksheet.js";
-import type { Style, NumFmt, Font, Alignment, Protection, Borders, Fill } from "../types.js";
+import type {
+  Style,
+  NumFmt,
+  Font,
+  Alignment,
+  Protection,
+  Borders,
+  Fill,
+  CellValue
+} from "../types.js";
 
 const DEFAULT_COLUMN_WIDTH = 9;
 
+/** Header value type - can be a single value or array for multi-row headers */
+export type ColumnHeaderValue = CellValue | CellValue[];
+
 export interface ColumnDefn {
-  header?: string | string[];
+  /** Column header value(s). Can be string, Date, number, or any CellValue type */
+  header?: ColumnHeaderValue;
   key?: string;
   width?: number;
   outlineLevel?: number;
@@ -36,7 +49,7 @@ export interface ColumnModel {
 class Column {
   declare private _worksheet: Worksheet;
   declare private _number: number;
-  declare private _header: string | string[] | undefined;
+  declare private _header: ColumnHeaderValue | undefined;
   declare private _key: string | undefined;
   /** The width of the column */
   declare public width?: number;
@@ -107,7 +120,10 @@ class Column {
     }
   }
 
-  get headers(): string[] {
+  /**
+   * Get header values as an array (for multi-row header support)
+   */
+  get headers(): CellValue[] {
     if (Array.isArray(this._header)) {
       return this._header;
     }
@@ -118,17 +134,18 @@ class Column {
   }
 
   /**
-   * Can be a string to set one row high header or an array to set multi-row high header
+   * Can be a single value or an array for multi-row headers.
+   * Supports any CellValue type including Date, number, string, etc.
    */
-  get header(): string | string[] | undefined {
+  get header(): ColumnHeaderValue | undefined {
     return this._header;
   }
 
-  set header(value: string | string[] | undefined) {
+  set header(value: ColumnHeaderValue | undefined) {
     if (value !== undefined) {
       this._header = value;
-      this.headers.forEach((text, index) => {
-        this._worksheet.getCell(index + 1, this.number).value = text;
+      this.headers.forEach((cellValue, index) => {
+        this._worksheet.getCell(index + 1, this.number).value = cellValue;
       });
     } else {
       this._header = undefined;
