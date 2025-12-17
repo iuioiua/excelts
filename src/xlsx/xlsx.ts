@@ -173,6 +173,9 @@ class XLSX {
       return;
     }
 
+    // Build mapping from definition name to cacheId
+    const definitionToCacheId = this._buildDefinitionToCacheIdMap(model);
+
     // Build a map of cache IDs to their definitions and records
     const cacheMap = new Map<
       number,
@@ -186,8 +189,9 @@ class XLSX {
     // Process cache definitions
     Object.entries(model.pivotCacheDefinitions || {}).forEach(
       ([name, definition]: [string, any]) => {
-        const cacheId = this._extractCacheIdFromDefinitionName(name, model);
-        if (cacheId !== null) {
+        // Get the cacheId from the mapping (derived from workbook.xml pivotCaches)
+        const cacheId = definitionToCacheId.get(name);
+        if (cacheId !== undefined) {
           const recordsName = name.replace("Definition", "Records");
           cacheMap.set(cacheId, {
             definition,
@@ -256,34 +260,47 @@ class XLSX {
   }
 
   /**
-   * Extract cache ID from definition name by checking workbook rels
+   * Build a mapping from rId to cacheId using pivotCaches from workbook.xml
+   * and workbookRels to determine which definition file corresponds to which cacheId
    */
-  private _extractCacheIdFromDefinitionName(name: string, model: any): number | null {
-    // Extract number from name (e.g., "pivotCacheDefinition1" -> 1)
-    const match = name.match(/pivotCacheDefinition(\d+)/);
-    if (!match) {
-      return null;
-    }
+  private _buildCacheIdMap(model: any): Map<string, number> {
+    const rIdToCacheId = new Map<string, number>();
 
-    const defNumber = parseInt(match[1], 10);
-
-    // Check workbook rels to find the cache ID
-    // The cache ID is typically 10-based (10, 11, 12, ...)
-    // but we need to map it correctly
-    const workbookRels = model.workbookRels || [];
-    for (const rel of workbookRels) {
-      if (
-        rel.Type === XLSX.RelType.PivotCacheDefinition &&
-        rel.Target?.includes(`pivotCacheDefinition${defNumber}.xml`)
-      ) {
-        // The cache ID is stored in the workbook.xml, not the rels
-        // For now, return a derived ID based on the definition number
-        return 9 + defNumber; // Results in 10, 11, 12, ... for 1, 2, 3, ...
+    // pivotCaches from workbook.xml contains {cacheId, rId} mappings
+    const pivotCaches = model.pivotCaches || [];
+    for (const cache of pivotCaches) {
+      if (cache.cacheId && cache.rId) {
+        rIdToCacheId.set(cache.rId, parseInt(cache.cacheId, 10));
       }
     }
 
-    // Fallback: derive from definition number
-    return 9 + defNumber;
+    return rIdToCacheId;
+  }
+
+  /**
+   * Build a mapping from definition name to cacheId
+   */
+  private _buildDefinitionToCacheIdMap(model: any): Map<string, number> {
+    const definitionToCacheId = new Map<string, number>();
+    const rIdToCacheId = this._buildCacheIdMap(model);
+    const workbookRels = model.workbookRels || [];
+
+    // Map workbook rels to get definitionNumber -> cacheId mapping
+    for (const rel of workbookRels) {
+      if (rel.Type === XLSX.RelType.PivotCacheDefinition && rel.Target) {
+        // Extract definition number from target (e.g., "pivotCache/pivotCacheDefinition1.xml" -> 1)
+        const match = rel.Target.match(/pivotCacheDefinition(\d+)\.xml/);
+        if (match) {
+          const defName = `pivotCacheDefinition${match[1]}`;
+          const cacheId = rIdToCacheId.get(rel.Id);
+          if (cacheId !== undefined) {
+            definitionToCacheId.set(defName, cacheId);
+          }
+        }
+      }
+    }
+
+    return definitionToCacheId;
   }
 
   /**
@@ -644,6 +661,9 @@ class XLSX {
               model.views = workbook.views;
               model.properties = workbook.properties;
               model.calcProperties = workbook.calcProperties;
+              // pivotCaches contains the mapping from rId to cacheId
+              // needed for linking pivot tables to their cache data
+              model.pivotCaches = workbook.pivotCaches;
               break;
             }
             case "xl/sharedStrings.xml":

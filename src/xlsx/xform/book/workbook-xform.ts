@@ -150,6 +150,9 @@ class WorkbookXform extends BaseXform {
         if (this.map.definedNames.model) {
           this.model.definedNames = this.map.definedNames.model;
         }
+        if (this.map.pivotCaches.model && this.map.pivotCaches.model.length > 0) {
+          this.model.pivotCaches = this.map.pivotCaches.model;
+        }
 
         return false;
       default:

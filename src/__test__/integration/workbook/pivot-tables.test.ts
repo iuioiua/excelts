@@ -967,5 +967,66 @@ describe("Workbook", () => {
         expect(pivot.cacheFields[1].sharedItems).toContain("b1");
       });
     });
+
+    describe("Issue #1678: Pivot tables with non-sequential cacheId", () => {
+      // This tests the fix for Issue #1678 where pivot tables with
+      // non-sequential cache IDs (e.g., cacheId=23 instead of 10)
+      // were not being properly linked to their cache data
+      const NON_SEQ_CACHE_FILEPATH = testFilePath("workbook-pivot-non-seq-cache.test");
+
+      it("should correctly load and save pivot tables with high cacheId values", async () => {
+        // Create a workbook with pivot table
+        const workbook = new Workbook();
+        const sheet1 = workbook.addWorksheet("Data");
+        sheet1.addRows(TEST_DATA);
+
+        const sheet2 = workbook.addWorksheet("Pivot");
+        sheet2.addPivotTable({
+          sourceSheet: sheet1,
+          rows: ["A"],
+          columns: ["C"],
+          values: ["D"],
+          metric: "sum"
+        });
+
+        // Save it
+        await workbook.xlsx.writeFile(NON_SEQ_CACHE_FILEPATH);
+
+        // Load and resave
+        const loadedWorkbook = new Workbook();
+        await loadedWorkbook.xlsx.readFile(NON_SEQ_CACHE_FILEPATH);
+
+        expect(loadedWorkbook.pivotTables.length).toBe(1);
+        const pivot = loadedWorkbook.pivotTables[0];
+
+        // Verify cache data is properly linked
+        expect(pivot.isLoaded).toBe(true);
+        expect(pivot.cacheDefinition).toBeDefined();
+        expect(pivot.cacheRecords).toBeDefined();
+
+        // Save again
+        const RESAVED_FILEPATH = testFilePath("workbook-pivot-non-seq-cache-resaved.test");
+        await loadedWorkbook.xlsx.writeFile(RESAVED_FILEPATH);
+
+        // Load the resaved file
+        const finalWorkbook = new Workbook();
+        await finalWorkbook.xlsx.readFile(RESAVED_FILEPATH);
+
+        // Verify pivot table is still intact
+        expect(finalWorkbook.pivotTables.length).toBe(1);
+        const finalPivot = finalWorkbook.pivotTables[0];
+        expect(finalPivot.isLoaded).toBe(true);
+        expect(finalPivot.cacheDefinition).toBeDefined();
+        expect(finalPivot.cacheRecords).toBeDefined();
+
+        // Verify the data is preserved
+        expect(finalPivot.cacheFields.length).toBeGreaterThan(0);
+        expect(finalPivot.cacheRecords.records.length).toBe(6); // 6 data rows
+
+        // Clean up
+        await promisify(fs.unlink)(NON_SEQ_CACHE_FILEPATH);
+        await promisify(fs.unlink)(RESAVED_FILEPATH);
+      });
+    });
   });
 });
