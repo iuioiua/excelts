@@ -1,13 +1,16 @@
+import { v4 as uuidv4 } from "uuid";
 import { XmlStream } from "../../../utils/xml-stream.js";
+import { xmlEncode } from "../../../utils/utils.js";
 import { BaseXform } from "../base-xform.js";
 
 interface PivotTableModel {
   rows: number[];
   columns: number[];
   values: number[];
-  metric: string;
+  metric: "sum" | "count";
   cacheFields: any[];
   cacheId: number;
+  applyWidthHeightFormats: "0" | "1";
 }
 
 class PivotTableXform extends BaseXform {
@@ -29,7 +32,7 @@ class PivotTableXform extends BaseXform {
   }
 
   render(xmlStream: any, model: PivotTableModel): void {
-    const { rows, columns, values, cacheFields, cacheId } = model;
+    const { rows, columns, values, cacheFields, cacheId, applyWidthHeightFormats } = model;
 
     // Examples
     // --------
@@ -40,10 +43,13 @@ class PivotTableXform extends BaseXform {
     //
     // the numbers are indices into `cacheFields`.
 
+    // Generate unique UID for each pivot table to prevent Excel treating them as identical
+    const uniqueUid = `{${uuidv4().toUpperCase()}}`;
+
     xmlStream.openXml(XmlStream.StdDocAttributes);
     xmlStream.openNode(this.tag, {
       ...PivotTableXform.PIVOT_TABLE_ATTRIBUTES,
-      "xr:uid": "{267EE50F-B116-784D-8DC2-BA77DE3F4F4A}",
+      "xr:uid": uniqueUid,
       name: "PivotTable2",
       cacheId,
       applyNumberFormats: "0",
@@ -51,7 +57,7 @@ class PivotTableXform extends BaseXform {
       applyFontFormats: "0",
       applyPatternFormats: "0",
       applyAlignmentFormats: "0",
-      applyWidthHeightFormats: "1",
+      applyWidthHeightFormats,
       dataCaption: "Values",
       updatedVersion: "8",
       minRefreshableVersion: "3",
@@ -83,19 +89,18 @@ class PivotTableXform extends BaseXform {
       <rowItems count="1">
         <i t="grand"><x /></i>
       </rowItems>
-      <colFields count="${columns.length}">
-        ${columns.map(columnIndex => `<field x="${columnIndex}" />`).join("\n    ")}
+      <colFields count="${columns.length === 0 ? 1 : columns.length}">
+        ${
+          columns.length === 0
+            ? '<field x="-2" />'
+            : columns.map(columnIndex => `<field x="${columnIndex}" />`).join("\n    ")
+        }
       </colFields>
       <colItems count="1">
         <i t="grand"><x /></i>
       </colItems>
       <dataFields count="${values.length}">
-        <dataField
-          name="Sum of ${cacheFields[values[0]].name}"
-          fld="${values[0]}"
-          baseField="0"
-          baseItem="0"
-        />
+        ${buildDataFields(cacheFields, values, model.metric)}
       </dataFields>
       <pivotTableStyleInfo
         name="PivotStyleLight16"
@@ -157,6 +162,27 @@ class PivotTableXform extends BaseXform {
 }
 
 // Helpers
+
+/**
+ * Build dataField XML elements for all values in the pivot table.
+ * Supports multiple values when columns is empty.
+ */
+function buildDataFields(cacheFields: any[], values: number[], metric: "sum" | "count"): string {
+  const metricName = metric === "count" ? "Count" : "Sum";
+  // For 'count' metric, Excel requires subtotal="count" attribute
+  const subtotalAttr = metric === "count" ? ' subtotal="count"' : "";
+
+  return values
+    .map(
+      valueIndex => `<dataField
+          name="${metricName} of ${xmlEncode(cacheFields[valueIndex].name)}"
+          fld="${valueIndex}"
+          baseField="0"
+          baseItem="0"${subtotalAttr}
+        />`
+    )
+    .join("");
+}
 
 function renderPivotFields(pivotTable: PivotTableModel): string {
   return pivotTable.cacheFields

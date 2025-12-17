@@ -19,6 +19,7 @@ const PIVOT_TABLE_FILEPATHS = [
 import { testFilePath } from "../../utils/test-file-helper.js";
 
 const TEST_XLSX_FILEPATH = testFilePath("workbook-pivot.test");
+const TEST_XLSX_TABLE_FILEPATH = testFilePath("workbook-pivot-table.test");
 
 const TEST_DATA = [
   ["A", "B", "C", "D", "E"],
@@ -35,7 +36,7 @@ const TEST_DATA = [
 
 describe("Workbook", () => {
   describe("Pivot Tables", () => {
-    it("if pivot table added, then certain xml and rels files are added", async () => {
+    it("if pivot table added with sourceSheet, then certain xml and rels files are added", async () => {
       const workbook = new Workbook();
 
       const worksheet1 = workbook.addWorksheet("Sheet1");
@@ -59,6 +60,44 @@ describe("Workbook", () => {
       });
     });
 
+    it("if pivot table added with sourceTable, then certain xml and rels files are added", async () => {
+      const workbook = new Workbook();
+
+      const worksheet = workbook.addWorksheet("Sheet1");
+
+      // Create a table with the same data structure as TEST_DATA
+      const table = worksheet.addTable({
+        name: "TestTable",
+        ref: "A1",
+        columns: [{ name: "A" }, { name: "B" }, { name: "C" }, { name: "D" }, { name: "E" }],
+        rows: [
+          ["a1", "b1", "c1", 4, 5],
+          ["a1", "b2", "c1", 4, 5],
+          ["a2", "b1", "c2", 14, 24],
+          ["a2", "b2", "c2", 24, 35],
+          ["a3", "b1", "c3", 34, 45],
+          ["a3", "b2", "c3", 44, 45]
+        ]
+      });
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+      worksheet2.addPivotTable({
+        sourceTable: table,
+        rows: ["A", "B"],
+        columns: ["C"],
+        values: ["E"],
+        metric: "sum"
+      });
+
+      return workbook.xlsx.writeFile(TEST_XLSX_TABLE_FILEPATH).then(async () => {
+        const buffer = await fsReadFileAsync(TEST_XLSX_TABLE_FILEPATH);
+        const zipData = unzipSync(new Uint8Array(buffer));
+        for (const filepath of PIVOT_TABLE_FILEPATHS) {
+          expect(zipData[filepath]).toBeDefined();
+        }
+      });
+    });
+
     it("if pivot table NOT added, then certain xml and rels files are not added", () => {
       const workbook = new Workbook();
 
@@ -74,6 +113,586 @@ describe("Workbook", () => {
           expect(zipData[filepath]).toBeUndefined();
         }
       });
+    });
+
+    it("throws error if neither sourceSheet nor sourceTable is provided", () => {
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet("Sheet1");
+
+      expect(() => {
+        worksheet.addPivotTable({
+          rows: ["A"],
+          columns: ["B"],
+          values: ["C"],
+          metric: "sum"
+        } as any);
+      }).toThrow("Either sourceSheet or sourceTable must be provided.");
+    });
+
+    it("throws error if both sourceSheet and sourceTable are provided", () => {
+      const workbook = new Workbook();
+
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const table = worksheet1.addTable({
+        name: "TestTable",
+        ref: "A1",
+        columns: [{ name: "A" }, { name: "B" }, { name: "C" }],
+        rows: [["a1", "b1", "c1"]]
+      });
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      expect(() => {
+        worksheet2.addPivotTable({
+          sourceSheet: worksheet1,
+          sourceTable: table,
+          rows: ["A"],
+          columns: ["B"],
+          values: ["C"],
+          metric: "sum"
+        });
+      }).toThrow("Cannot specify both sourceSheet and sourceTable. Choose one.");
+    });
+
+    it("throws error if header name not found in sourceTable", () => {
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet("Sheet1");
+
+      const table = worksheet.addTable({
+        name: "TestTable",
+        ref: "A1",
+        columns: [{ name: "A" }, { name: "B" }, { name: "C" }],
+        rows: [["a1", "b1", "c1"]]
+      });
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      expect(() => {
+        worksheet2.addPivotTable({
+          sourceTable: table,
+          rows: ["A"],
+          columns: ["NonExistent"],
+          values: ["C"],
+          metric: "sum"
+        });
+      }).toThrow('The header name "NonExistent" was not found in TestTable.');
+    });
+
+    it("throws error if sourceTable has no data rows", () => {
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet("Sheet1");
+
+      const table = worksheet.addTable({
+        name: "EmptyTable",
+        ref: "A1",
+        columns: [{ name: "A" }, { name: "B" }, { name: "C" }],
+        rows: [] // empty rows
+      });
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      expect(() => {
+        worksheet2.addPivotTable({
+          sourceTable: table,
+          rows: ["A"],
+          columns: ["B"],
+          values: ["C"],
+          metric: "sum"
+        });
+      }).toThrow("Cannot create pivot table from an empty table. Add data rows to the table.");
+    });
+
+    it("throws error if sourceTable has duplicate column names", () => {
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet("Sheet1");
+
+      const table = worksheet.addTable({
+        name: "DuplicateColumnsTable",
+        ref: "A1",
+        columns: [{ name: "A" }, { name: "B" }, { name: "A" }], // duplicate 'A'
+        rows: [["a1", "b1", "a2"]]
+      });
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      expect(() => {
+        worksheet2.addPivotTable({
+          sourceTable: table,
+          rows: ["A"],
+          columns: ["B"],
+          values: ["A"],
+          metric: "sum"
+        });
+      }).toThrow(
+        'Duplicate column name "A" found in table. Pivot tables require unique column names.'
+      );
+    });
+
+    it("works with sourceTable not starting at A1", async () => {
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet("Sheet1");
+
+      // Table starting at C5 instead of A1
+      const table = worksheet.addTable({
+        name: "OffsetTable",
+        ref: "C5",
+        columns: [{ name: "A" }, { name: "B" }, { name: "C" }, { name: "D" }, { name: "E" }],
+        rows: [
+          ["a1", "b1", "c1", 4, 5],
+          ["a1", "b2", "c1", 4, 5],
+          ["a2", "b1", "c2", 14, 24]
+        ]
+      });
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+      worksheet2.addPivotTable({
+        sourceTable: table,
+        rows: ["A"],
+        columns: ["B"],
+        values: ["E"],
+        metric: "sum"
+      });
+
+      const offsetFilePath = testFilePath("workbook-pivot-offset.test");
+      return workbook.xlsx.writeFile(offsetFilePath).then(async () => {
+        const buffer = await fsReadFileAsync(offsetFilePath);
+        const zipData = unzipSync(new Uint8Array(buffer));
+        for (const filepath of PIVOT_TABLE_FILEPATHS) {
+          expect(zipData[filepath]).toBeDefined();
+        }
+      });
+    });
+
+    it("supports multiple values when columns is empty", async () => {
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet("Sheet1");
+
+      const table = worksheet.addTable({
+        name: "MultiValuesTable",
+        ref: "A1",
+        columns: [{ name: "A" }, { name: "B" }, { name: "C" }, { name: "D" }, { name: "E" }],
+        rows: [
+          ["a1", "b1", "c1", 4, 5],
+          ["a1", "b2", "c1", 4, 5],
+          ["a2", "b1", "c2", 14, 24],
+          ["a2", "b2", "c2", 24, 35]
+        ]
+      });
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+      worksheet2.addPivotTable({
+        sourceTable: table,
+        rows: ["A", "B"],
+        columns: [], // Empty columns - allows multiple values
+        values: ["D", "E"], // Multiple values
+        metric: "sum"
+      });
+
+      const multiValuesFilePath = testFilePath("workbook-pivot-multi-values.test");
+      return workbook.xlsx.writeFile(multiValuesFilePath).then(async () => {
+        const buffer = await fsReadFileAsync(multiValuesFilePath);
+        const zipData = unzipSync(new Uint8Array(buffer));
+        for (const filepath of PIVOT_TABLE_FILEPATHS) {
+          expect(zipData[filepath]).toBeDefined();
+        }
+      });
+    });
+
+    it("supports empty columns with single value", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["A", "B"],
+        columns: [], // Empty columns
+        values: ["E"],
+        metric: "sum"
+      });
+
+      const emptyColsFilePath = testFilePath("workbook-pivot-empty-cols.test");
+      return workbook.xlsx.writeFile(emptyColsFilePath).then(async () => {
+        const buffer = await fsReadFileAsync(emptyColsFilePath);
+        const zipData = unzipSync(new Uint8Array(buffer));
+        for (const filepath of PIVOT_TABLE_FILEPATHS) {
+          expect(zipData[filepath]).toBeDefined();
+        }
+      });
+    });
+
+    it("throws error if multiple values with non-empty columns", () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      expect(() => {
+        worksheet2.addPivotTable({
+          sourceSheet: worksheet1,
+          rows: ["A"],
+          columns: ["B"], // Non-empty columns
+          values: ["D", "E"], // Multiple values - not allowed with columns
+          metric: "sum"
+        });
+      }).toThrow(
+        "It is currently not possible to have multiple values when columns are specified. Please either supply an empty array for columns or a single value."
+      );
+    });
+
+    it("throws error if no values specified", () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      expect(() => {
+        worksheet2.addPivotTable({
+          sourceSheet: worksheet1,
+          rows: ["A"],
+          columns: ["B"],
+          values: [], // No values
+          metric: "sum"
+        });
+      }).toThrow("Must have at least one value.");
+    });
+
+    it("supports applyWidthHeightFormats option to preserve column widths", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      // Set custom column widths before creating pivot table
+      worksheet2.getColumn(1).width = 30;
+      worksheet2.getColumn(2).width = 15;
+
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["A", "B"],
+        columns: ["C"],
+        values: ["D"],
+        metric: "sum",
+        applyWidthHeightFormats: "0" // Preserve worksheet column widths
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      // Verify the pivot table XML contains the correct attribute
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+      const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
+
+      expect(pivotTableXml).toContain('applyWidthHeightFormats="0"');
+    });
+
+    it("defaults applyWidthHeightFormats to 1 when not specified", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["A", "B"],
+        columns: ["C"],
+        values: ["D"],
+        metric: "sum"
+        // applyWidthHeightFormats not specified, should default to "1"
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      // Verify the pivot table XML contains the default attribute
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+      const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
+
+      expect(pivotTableXml).toContain('applyWidthHeightFormats="1"');
+    });
+
+    it("supports omitting columns (Excel uses 'Values' as column field)", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      // Create pivot table without specifying columns
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["A", "B"],
+        // columns is omitted - should default to []
+        values: ["D"],
+        metric: "sum"
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      // Verify the file was created successfully
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+
+      // Verify pivot table XML exists
+      expect(zipData["xl/pivotTables/pivotTable1.xml"]).toBeDefined();
+    });
+
+    it("handles XML special characters in pivot table data", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+
+      // Data with XML special characters: &, <, >, ", '
+      // Use special characters in both row fields AND value field names
+      worksheet1.addRows([
+        ["Company", "Product", "Sales & Revenue"],
+        ["Johnson & Johnson", "Drug A", 1000],
+        ["BioTech <Special>", "Drug B", 1500],
+        ['PharmaCorp "Elite"', "Drug C", 1200],
+        ["Gene's Labs", "Drug D", 1800]
+      ]);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["Company"],
+        columns: ["Product"],
+        values: ["Sales & Revenue"], // Value field name contains &
+        metric: "sum"
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      // Verify the file was created successfully
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+
+      // Verify pivot cache definition contains properly escaped XML
+      const cacheDefinition = new TextDecoder().decode(
+        zipData["xl/pivotCache/pivotCacheDefinition1.xml"]
+      );
+
+      // Check that XML special characters are escaped in sharedItems
+      expect(cacheDefinition).toContain("Johnson &amp; Johnson");
+      expect(cacheDefinition).toContain("BioTech &lt;Special&gt;");
+      expect(cacheDefinition).toContain("PharmaCorp &quot;Elite&quot;");
+      expect(cacheDefinition).toContain("Gene&apos;s Labs");
+
+      // Verify the XML is valid (no unescaped special chars)
+      expect(cacheDefinition).not.toContain('v="Johnson & Johnson"');
+      expect(cacheDefinition).not.toContain('v="BioTech <Special>"');
+
+      // Verify pivot table definition has escaped dataField name
+      const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
+      expect(pivotTableXml).toContain("Sum of Sales &amp; Revenue");
+      expect(pivotTableXml).not.toContain("Sum of Sales & Revenue");
+    });
+
+    it("handles null and undefined values in pivot table data", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+
+      // Data with null/undefined values
+      worksheet1.addRows([
+        ["Region", "Territory", "Amount"],
+        ["North", "NE", 1000],
+        ["South", null, 1500], // null territory
+        ["East", undefined, 2000], // undefined territory
+        ["West", "NW", 2200]
+      ]);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["Region", "Territory"], // Territory has null/undefined values
+        values: ["Amount"],
+        metric: "sum"
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      // Verify the file was created successfully (no crash)
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+
+      // Verify pivot cache records contains <m /> for missing values
+      const cacheRecords = new TextDecoder().decode(
+        zipData["xl/pivotCache/pivotCacheRecords1.xml"]
+      );
+
+      // <m /> is OOXML standard for missing values
+      expect(cacheRecords).toContain("<m />");
+
+      // Verify pivot table XML exists
+      expect(zipData["xl/pivotTables/pivotTable1.xml"]).toBeDefined();
+    });
+
+    it("supports multiple pivot tables from same source data", async () => {
+      const workbook = new Workbook();
+
+      // Create source data with multiple dimensions
+      const sourceSheet = workbook.addWorksheet("Sales Data");
+      sourceSheet.addRows([
+        ["Region", "Product", "Salesperson", "Quarter", "Revenue", "Units"],
+        ["North", "Widget A", "Alice", "Q1", 10000, 100],
+        ["South", "Widget B", "Bob", "Q1", 15000, 150],
+        ["North", "Widget A", "Alice", "Q2", 12000, 120],
+        ["South", "Widget B", "Bob", "Q2", 18000, 180],
+        ["East", "Widget C", "Charlie", "Q1", 20000, 200],
+        ["West", "Widget C", "Diana", "Q2", 22000, 220]
+      ]);
+
+      // First pivot table: Revenue by Region and Product
+      const pivot1Sheet = workbook.addWorksheet("Pivot 1 - Region x Product");
+      pivot1Sheet.addPivotTable({
+        sourceSheet,
+        rows: ["Region", "Product"],
+        columns: ["Quarter"],
+        values: ["Revenue"],
+        metric: "sum"
+      });
+
+      // Second pivot table: Units by Salesperson (completely different fields)
+      const pivot2Sheet = workbook.addWorksheet("Pivot 2 - Salesperson");
+      pivot2Sheet.addPivotTable({
+        sourceSheet,
+        rows: ["Salesperson"],
+        columns: ["Quarter"],
+        values: ["Units"],
+        metric: "sum"
+      });
+
+      // Third pivot table: Another different configuration
+      const pivot3Sheet = workbook.addWorksheet("Pivot 3 - Product x Region");
+      pivot3Sheet.addPivotTable({
+        sourceSheet,
+        rows: ["Product"],
+        columns: ["Region"],
+        values: ["Revenue"],
+        metric: "sum"
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      // Verify the file was created successfully
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+
+      // Verify all three pivot tables exist
+      expect(zipData["xl/pivotTables/pivotTable1.xml"]).toBeDefined();
+      expect(zipData["xl/pivotTables/pivotTable2.xml"]).toBeDefined();
+      expect(zipData["xl/pivotTables/pivotTable3.xml"]).toBeDefined();
+
+      // Verify all three pivot cache definitions exist
+      expect(zipData["xl/pivotCache/pivotCacheDefinition1.xml"]).toBeDefined();
+      expect(zipData["xl/pivotCache/pivotCacheDefinition2.xml"]).toBeDefined();
+      expect(zipData["xl/pivotCache/pivotCacheDefinition3.xml"]).toBeDefined();
+
+      // Verify each pivot table has unique cacheId
+      const pivotTable1Xml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
+      const pivotTable2Xml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable2.xml"]);
+      const pivotTable3Xml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable3.xml"]);
+
+      expect(pivotTable1Xml).toContain('cacheId="10"');
+      expect(pivotTable2Xml).toContain('cacheId="11"');
+      expect(pivotTable3Xml).toContain('cacheId="12"');
+
+      // Verify each pivot table has unique UID (not hardcoded)
+      const uid1Match = pivotTable1Xml.match(/xr:uid="([^"]+)"/);
+      const uid2Match = pivotTable2Xml.match(/xr:uid="([^"]+)"/);
+      const uid3Match = pivotTable3Xml.match(/xr:uid="([^"]+)"/);
+
+      expect(uid1Match).toBeTruthy();
+      expect(uid2Match).toBeTruthy();
+      expect(uid3Match).toBeTruthy();
+
+      // UIDs should all be different
+      expect(uid1Match![1]).not.toBe(uid2Match![1]);
+      expect(uid2Match![1]).not.toBe(uid3Match![1]);
+      expect(uid1Match![1]).not.toBe(uid3Match![1]);
+    });
+
+    it("supports 'count' metric for pivot tables", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["A", "B"],
+        columns: ["C"],
+        values: ["D"],
+        metric: "count"
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      // Verify the file was created successfully
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+
+      // Verify pivot table XML contains count-specific attributes
+      const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
+
+      // dataField should have name="Count of D" and subtotal="count"
+      expect(pivotTableXml).toContain("Count of D");
+      expect(pivotTableXml).toContain('subtotal="count"');
+      expect(pivotTableXml).not.toContain("Sum of");
+    });
+
+    it("defaults to 'sum' metric when not specified", async () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      worksheet2.addPivotTable({
+        sourceSheet: worksheet1,
+        rows: ["A", "B"],
+        columns: ["C"],
+        values: ["D"]
+        // metric not specified - should default to 'sum'
+      });
+
+      await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
+
+      const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
+      const zipData = unzipSync(new Uint8Array(buffer));
+
+      const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
+
+      // dataField should have name="Sum of D" and no subtotal attribute
+      expect(pivotTableXml).toContain("Sum of D");
+      expect(pivotTableXml).not.toContain('subtotal="count"');
+    });
+
+    it("throws error for unsupported metric", () => {
+      const workbook = new Workbook();
+      const worksheet1 = workbook.addWorksheet("Sheet1");
+      worksheet1.addRows(TEST_DATA);
+
+      const worksheet2 = workbook.addWorksheet("Sheet2");
+
+      expect(() => {
+        worksheet2.addPivotTable({
+          sourceSheet: worksheet1,
+          rows: ["A", "B"],
+          columns: ["C"],
+          values: ["D"],
+          metric: "average" as any // unsupported metric
+        });
+      }).toThrow('Only the "sum" and "count" metrics are supported at this time.');
     });
   });
 });

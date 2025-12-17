@@ -1110,11 +1110,6 @@ class Worksheet {
   // =========================================================================
   // Pivot Tables
   addPivotTable(model: PivotTableModel): PivotTable {
-    console.warn(
-      `Warning: Pivot Table support is experimental. 
-Please leave feedback at https://github.com/excelts/excelts/discussions/2575`
-    );
-
     const pivotTable = makePivotTable(this, model);
 
     this.pivotTables.push(pivotTable);

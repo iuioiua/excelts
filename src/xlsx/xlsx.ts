@@ -583,15 +583,15 @@ class XLSX {
         Target: "sharedStrings.xml"
       });
     }
-    if ((model.pivotTables || []).length) {
-      const pivotTable = model.pivotTables[0];
+    // Add relationships for all pivot tables
+    (model.pivotTables || []).forEach((pivotTable: any) => {
       pivotTable.rId = `rId${count++}`;
       relationships.push({
         Id: pivotTable.rId,
         Type: XLSX.RelType.PivotCacheDefinition,
-        Target: "pivotCache/pivotCacheDefinition1.xml"
+        Target: `pivotCache/pivotCacheDefinition${pivotTable.tableNumber}.xml`
       });
-    }
+    });
     model.worksheets.forEach((worksheet: any) => {
       worksheet.rId = `rId${count++}`;
       relationships.push({
@@ -712,43 +712,46 @@ class XLSX {
       return;
     }
 
-    const pivotTable = model.pivotTables[0];
-
     const pivotCacheRecordsXform = new PivotCacheRecordsXform();
     const pivotCacheDefinitionXform = new PivotCacheDefinitionXform();
     const pivotTableXform = new PivotTableXform();
     const relsXform = new RelationshipsXform();
 
-    // pivot cache records
-    let xml = pivotCacheRecordsXform.toXml(pivotTable);
-    zip.append(xml, { name: "xl/pivotCache/pivotCacheRecords1.xml" });
+    // Generate files for each pivot table
+    model.pivotTables.forEach((pivotTable: any) => {
+      const n = pivotTable.tableNumber;
 
-    // pivot cache definition
-    xml = pivotCacheDefinitionXform.toXml(pivotTable);
-    zip.append(xml, { name: "xl/pivotCache/pivotCacheDefinition1.xml" });
+      // pivot cache records
+      let xml = pivotCacheRecordsXform.toXml(pivotTable);
+      zip.append(xml, { name: `xl/pivotCache/pivotCacheRecords${n}.xml` });
 
-    // pivot cache definition rels
-    xml = relsXform.toXml([
-      {
-        Id: "rId1",
-        Type: XLSX.RelType.PivotCacheRecords,
-        Target: "pivotCacheRecords1.xml"
-      }
-    ]);
-    zip.append(xml, { name: "xl/pivotCache/_rels/pivotCacheDefinition1.xml.rels" });
+      // pivot cache definition
+      xml = pivotCacheDefinitionXform.toXml(pivotTable);
+      zip.append(xml, { name: `xl/pivotCache/pivotCacheDefinition${n}.xml` });
 
-    // pivot table
-    xml = pivotTableXform.toXml(pivotTable);
-    zip.append(xml, { name: "xl/pivotTables/pivotTable1.xml" });
+      // pivot cache definition rels
+      xml = relsXform.toXml([
+        {
+          Id: "rId1",
+          Type: XLSX.RelType.PivotCacheRecords,
+          Target: `pivotCacheRecords${n}.xml`
+        }
+      ]);
+      zip.append(xml, { name: `xl/pivotCache/_rels/pivotCacheDefinition${n}.xml.rels` });
 
-    xml = relsXform.toXml([
-      {
-        Id: "rId1",
-        Type: XLSX.RelType.PivotCacheDefinition,
-        Target: "../pivotCache/pivotCacheDefinition1.xml"
-      }
-    ]);
-    zip.append(xml, { name: "xl/pivotTables/_rels/pivotTable1.xml.rels" });
+      // pivot table
+      xml = pivotTableXform.toXml(pivotTable);
+      zip.append(xml, { name: `xl/pivotTables/pivotTable${n}.xml` });
+
+      xml = relsXform.toXml([
+        {
+          Id: "rId1",
+          Type: XLSX.RelType.PivotCacheDefinition,
+          Target: `../pivotCache/pivotCacheDefinition${n}.xml`
+        }
+      ]);
+      zip.append(xml, { name: `xl/pivotTables/_rels/pivotTable${n}.xml.rels` });
+    });
   }
 
   _finalize(zip: any): Promise<XLSX> {

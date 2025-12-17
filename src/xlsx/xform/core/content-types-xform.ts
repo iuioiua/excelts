@@ -43,20 +43,23 @@ class ContentTypesXform extends BaseXform {
     });
 
     if ((model.pivotTables || []).length) {
-      // Note(2023-10-06): assuming at most one pivot table for now.
-      xmlStream.leafNode("Override", {
-        PartName: "/xl/pivotCache/pivotCacheDefinition1.xml",
-        ContentType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml"
-      });
-      xmlStream.leafNode("Override", {
-        PartName: "/xl/pivotCache/pivotCacheRecords1.xml",
-        ContentType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheRecords+xml"
-      });
-      xmlStream.leafNode("Override", {
-        PartName: "/xl/pivotTables/pivotTable1.xml",
-        ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml"
+      // Add content types for each pivot table
+      (model.pivotTables || []).forEach((pivotTable: any) => {
+        const n = pivotTable.tableNumber;
+        xmlStream.leafNode("Override", {
+          PartName: `/xl/pivotCache/pivotCacheDefinition${n}.xml`,
+          ContentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml"
+        });
+        xmlStream.leafNode("Override", {
+          PartName: `/xl/pivotCache/pivotCacheRecords${n}.xml`,
+          ContentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheRecords+xml"
+        });
+        xmlStream.leafNode("Override", {
+          PartName: `/xl/pivotTables/pivotTable${n}.xml`,
+          ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml"
+        });
       });
     }
 

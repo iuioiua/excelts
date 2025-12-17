@@ -1,8 +1,10 @@
 import { XmlStream } from "../../../utils/xml-stream.js";
+import { xmlEncode } from "../../../utils/utils.js";
 import { BaseXform } from "../base-xform.js";
+import type { PivotTableSource } from "../../../doc/pivot-table.js";
 
 interface CacheRecordsModel {
-  sourceSheet: any;
+  source: PivotTableSource;
   cacheFields: any[];
 }
 
@@ -25,8 +27,8 @@ class PivotCacheRecordsXform extends BaseXform {
   }
 
   render(xmlStream: any, model: CacheRecordsModel): void {
-    const { sourceSheet, cacheFields } = model;
-    const sourceBodyRows = sourceSheet.getSheetValues().slice(2);
+    const { source, cacheFields } = model;
+    const sourceBodyRows = source.getSheetValues().slice(2);
 
     xmlStream.openXml(XmlStream.StdDocAttributes);
     xmlStream.openNode(this.tag, {
@@ -58,6 +60,12 @@ class PivotCacheRecordsXform extends BaseXform {
     }
 
     function renderCell(value: any, sharedItems: string[] | null): string {
+      // Handle null/undefined values first
+      // Missing Value: http://www.datypic.com/sc/ooxml/e-ssml_m-3.html
+      if (value === null || value === undefined) {
+        return "<m />";
+      }
+
       // no shared items
       // --------------------------------------------------
       if (sharedItems === null) {
@@ -66,7 +74,8 @@ class PivotCacheRecordsXform extends BaseXform {
           return `<n v="${value}" />`;
         }
         // Character Value: http://www.datypic.com/sc/ooxml/e-ssml_s-2.html
-        return `<s v="${value}" />`;
+        // Escape XML special characters
+        return `<s v="${xmlEncode(String(value))}" />`;
       }
 
       // shared items

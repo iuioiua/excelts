@@ -385,6 +385,12 @@ class CellXform extends BaseXform {
               model.type = Enums.ValueType.Error;
               model.value = { error: model.value };
               break;
+            case "d":
+              // Strict OpenXML format stores dates as ISO strings with t="d"
+              // See: https://www.loc.gov/preservation/digital/formats/fdd/fdd000401.shtml
+              model.type = Enums.ValueType.Date;
+              model.value = new Date(model.value);
+              break;
             default:
               model.type = Enums.ValueType.Number;
               model.value = parseFloat(model.value);

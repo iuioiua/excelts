@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { testUtils } from "../utils/index.js";
+import { testFilePath } from "../utils/test-file-helper.js";
 import { Workbook, WorkbookWriter, ValueType } from "../../index.js";
 
 const CONCATENATE_HELLO_WORLD = 'CONCATENATE("Hello", ", ", "World!")';
@@ -501,6 +502,65 @@ describe("WorksheetWriter", () => {
       expect(cellA2.formula).toBe("A1");
       expect(cellA2.result).toBe("test");
       expect(typeof cellA2.result).toBe("string");
+    });
+  });
+
+  describe("XML Element Order", () => {
+    it("writes sheetProtection before autoFilter for valid Excel files", async () => {
+      // issue: https://github.com/exceljs/exceljs/pull/2685
+      // Per OOXML spec (http://www.datypic.com/sc/ooxml/e-ssml_worksheet.html),
+      // sheetProtection (#8) must come before autoFilter (#11) in the XML sequence.
+      // When the order is wrong, Excel cannot open the file.
+      const testFile = testFilePath("xml-element-order.test");
+      const wb = new WorkbookWriter({
+        filename: testFile,
+        useStyles: true
+      });
+      const ws = wb.addWorksheet("test");
+
+      // Add some data
+      ws.getCell("A1").value = "Name";
+      ws.getCell("B1").value = "Age";
+      ws.getCell("C1").value = "City";
+      ws.getRow(1).commit();
+
+      ws.getCell("A2").value = "John";
+      ws.getCell("B2").value = 30;
+      ws.getCell("C2").value = "NYC";
+      ws.getRow(2).commit();
+
+      // Set autoFilter
+      ws.autoFilter = { from: "A1", to: "C1" };
+
+      // Set sheet protection
+      await ws.protect("test", { formatColumns: true, formatRows: true, autoFilter: true });
+
+      ws.commit();
+      await wb.commit();
+
+      // Read it back and verify it's valid
+      const wb2 = new Workbook();
+      await wb2.xlsx.readFile(testFile);
+
+      const ws2 = wb2.getWorksheet("test");
+      expect(ws2).toBeDefined();
+
+      // Verify autoFilter is present and correct
+      expect(ws2.autoFilter).toBe("A1:C1");
+
+      // Verify protection is present with correct options
+      expect(ws2.sheetProtection.sheet).toBe(true);
+      expect(ws2.sheetProtection.formatColumns).toBe(true);
+      expect(ws2.sheetProtection.formatRows).toBe(true);
+      expect(ws2.sheetProtection.autoFilter).toBe(true);
+
+      // Verify data is intact
+      expect(ws2.getCell("A1").value).toBe("Name");
+      expect(ws2.getCell("B1").value).toBe("Age");
+      expect(ws2.getCell("C1").value).toBe("City");
+      expect(ws2.getCell("A2").value).toBe("John");
+      expect(ws2.getCell("B2").value).toBe(30);
+      expect(ws2.getCell("C2").value).toBe("NYC");
     });
   });
 });

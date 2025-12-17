@@ -77,6 +77,22 @@ const expectations = [
     tests: ["render", "renderIn", "parse"]
   },
   {
+    // Strict OpenXML format stores dates as ISO strings with t="d"
+    // issue: https://github.com/exceljs/exceljs/issues/2695
+    // PR: https://github.com/exceljs/exceljs/pull/2702
+    title: "Date (Strict OpenXML format)",
+    create() {
+      return new CellXform();
+    },
+    parsedModel: {
+      address: "A1",
+      type: Enums.ValueType.Date,
+      value: new Date("2024-02-09")
+    },
+    xml: '<c r="A1" t="d"><v>2024-02-09</v></c>',
+    tests: ["parse"]
+  },
+  {
     title: "String",
     create() {
       return new CellXform();

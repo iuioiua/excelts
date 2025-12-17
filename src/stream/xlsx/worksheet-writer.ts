@@ -280,6 +280,7 @@ class WorksheetWriter {
       this._writeOpenSheetData();
     }
     this._writeCloseSheetData();
+    this._writeSheetProtection(); // Note: must be after sheetData and before autoFilter
     this._writeAutoFilter();
     this._writeMergeCells();
 
@@ -289,7 +290,6 @@ class WorksheetWriter {
     this._writeHyperlinks();
     this._writeConditionalFormatting();
     this._writeDataValidations();
-    this._writeSheetProtection();
     this._writePageMargins();
     this._writePageSetup();
     this._writeBackground();

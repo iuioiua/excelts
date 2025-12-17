@@ -1,9 +1,10 @@
 import { BaseXform } from "../base-xform.js";
 import { CacheField } from "./cache-field.js";
 import { XmlStream } from "../../../utils/xml-stream.js";
+import type { PivotTableSource } from "../../../doc/pivot-table.js";
 
 interface CacheDefinitionModel {
-  sourceSheet: any;
+  source: PivotTableSource;
   cacheFields: any[];
 }
 
@@ -26,7 +27,7 @@ class PivotCacheDefinitionXform extends BaseXform {
   }
 
   render(xmlStream: any, model: CacheDefinitionModel): void {
-    const { sourceSheet, cacheFields } = model;
+    const { source, cacheFields } = model;
 
     xmlStream.openXml(XmlStream.StdDocAttributes);
     xmlStream.openNode(this.tag, {
@@ -43,8 +44,8 @@ class PivotCacheDefinitionXform extends BaseXform {
 
     xmlStream.openNode("cacheSource", { type: "worksheet" });
     xmlStream.leafNode("worksheetSource", {
-      ref: sourceSheet.dimensions.shortRange,
-      sheet: sourceSheet.name
+      ref: source.dimensions.shortRange,
+      sheet: source.name
     });
     xmlStream.closeNode();
 
