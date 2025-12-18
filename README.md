@@ -218,18 +218,3 @@ This project is a fork of ExcelJS with modernization improvements. All credit fo
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
-
-### 1.0.0 (2025-10-30)
-
-🎉 **First Stable Release** - ExcelTS is now production-ready!
-
-- Full TypeScript rewrite with strict typing
-- All default exports converted to named exports
-- Updated all dependencies to latest versions
-- Migrated to Vitest for testing
-- Switched to Rolldown for bundling
-- Modern ES Module support
-- Node 18+ support
-- Enhanced type safety with proper access modifiers
-- Browser testing support
-- Performance optimizations
