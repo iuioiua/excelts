@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1](https://github.com/cjnoname/excelts/compare/v1.6.0...v1.6.1) (2025-12-18)
+
+
+### Bug Fixes
+
+* **ci:** add npm publish job to release-please workflow ([a84e54e](https://github.com/cjnoname/excelts/commit/a84e54e2e238e349fe0218af41036d987a8aa089))
+
 ## [1.6.0](https://github.com/cjnoname/excelts/compare/v1.5.0...v1.6.0) (2025-12-18)
 
 
