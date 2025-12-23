@@ -11,15 +11,61 @@ import { RelationshipsXform } from "../../xlsx/xform/core/relationships-xform.js
 import { WorksheetReader } from "./worksheet-reader.js";
 import { HyperlinkReader } from "./hyperlink-reader.js";
 import { createParse } from "../../utils/unzip/parse.js";
+import type { WorksheetState, Font, WorkbookProperties } from "../../types.js";
 
-interface WorkbookReaderOptions {
-  worksheets?: string;
-  sharedStrings?: string;
-  hyperlinks?: string;
-  styles?: string;
-  entries?: string;
+// ============================================================================
+// Internal Types
+// ============================================================================
+
+/** Internal options type that includes undocumented 'prep' value */
+export interface InternalWorksheetOptions {
+  worksheets?: "emit" | "ignore" | "prep";
+  sharedStrings?: "cache" | "emit" | "ignore";
+  hyperlinks?: "cache" | "emit" | "ignore";
+  styles?: "cache" | "ignore";
+  entries?: "emit" | "ignore";
 }
 
+/** Rich text item from shared strings */
+export interface SharedStringRichText {
+  richText: Array<{
+    font: Partial<Font> | null;
+    text: string | null;
+  }>;
+}
+
+/** Shared string value - either plain text or rich text */
+export type SharedStringValue = string | SharedStringRichText;
+
+/** Relationship entry from workbook.xml.rels */
+export interface WorkbookRelationship {
+  Id: string;
+  Target: string;
+  Type?: string;
+}
+
+/** Sheet metadata from workbook.xml */
+export interface SheetMetadata {
+  id: number;
+  name: string;
+  state?: WorksheetState;
+  rId: string;
+}
+
+/** Workbook model parsed from workbook.xml */
+export interface WorkbookModel {
+  sheets?: SheetMetadata[];
+  properties?: Partial<WorkbookProperties>;
+  views?: unknown[];
+  definedNames?: unknown[];
+}
+
+/** Properties parsed from workbook.xml (workbookPr element) */
+export interface WorkbookPropertiesXform {
+  model?: Partial<WorkbookProperties>;
+}
+
+/** Waiting worksheet for deferred parsing */
 interface WaitingWorksheet {
   sheetNo: string;
   path: string;
@@ -27,17 +73,84 @@ interface WaitingWorksheet {
   writePromise: Promise<void>;
 }
 
-class WorkbookReader extends EventEmitter {
-  input: any;
-  options: WorkbookReaderOptions;
-  styles: any;
-  stream?: any;
-  sharedStrings?: any[];
-  workbookRels?: any[];
-  properties?: any;
-  model?: any;
+/** Entry event payload */
+interface EntryPayload {
+  type: "shared-strings" | "styles" | "workbook" | "worksheet" | "hyperlinks";
+  id?: string;
+}
 
-  constructor(input: any, options: WorkbookReaderOptions = {}) {
+/** Parse event types */
+export type ParseEventType = "shared-strings" | "worksheet" | "hyperlinks";
+
+export interface SharedStringEvent {
+  eventType: "shared-strings";
+  value: { index: number; text: SharedStringValue };
+}
+
+export interface WorksheetReadyEvent {
+  eventType: "worksheet";
+  value: WorksheetReader;
+}
+
+export interface HyperlinksEvent {
+  eventType: "hyperlinks";
+  value: HyperlinkReader;
+}
+
+export type ParseEvent = SharedStringEvent | WorksheetReadyEvent | HyperlinksEvent;
+
+// ============================================================================
+// Public Types
+// ============================================================================
+
+/**
+ * Options for WorkbookReader
+ */
+export interface WorkbookReaderOptions {
+  /**
+   * Specifies whether to emit worksheets ('emit') or not ('ignore').
+   * @default 'emit'
+   */
+  worksheets?: "emit" | "ignore";
+  /**
+   * Specifies whether to cache shared strings ('cache'), emit them ('emit'), or ignore them ('ignore').
+   * @default 'cache'
+   */
+  sharedStrings?: "cache" | "emit" | "ignore";
+  /**
+   * Specifies whether to cache hyperlinks ('cache'), emit them ('emit'), or ignore them ('ignore').
+   * @default 'ignore'
+   */
+  hyperlinks?: "cache" | "emit" | "ignore";
+  /**
+   * Specifies whether to cache styles ('cache') or ignore them ('ignore').
+   * @default 'ignore'
+   */
+  styles?: "cache" | "ignore";
+  /**
+   * Specifies whether to emit entries ('emit') or not ('ignore').
+   * @default 'ignore'
+   */
+  entries?: "emit" | "ignore";
+}
+
+class WorkbookReader extends EventEmitter {
+  input: string | Readable;
+  options: {
+    worksheets: "emit" | "ignore";
+    sharedStrings: "cache" | "emit" | "ignore";
+    hyperlinks: "cache" | "emit" | "ignore";
+    styles: "cache" | "ignore";
+    entries: "emit" | "ignore";
+  };
+  styles: StylesXform;
+  stream?: Readable;
+  sharedStrings?: SharedStringValue[];
+  workbookRels?: WorkbookRelationship[];
+  properties?: WorkbookPropertiesXform;
+  model?: WorkbookModel;
+
+  constructor(input: string | Readable, options: WorkbookReaderOptions = {}) {
     super();
 
     this.input = input;
@@ -55,7 +168,7 @@ class WorkbookReader extends EventEmitter {
     this.styles.init();
   }
 
-  _getStream(input: any): any {
+  _getStream(input: string | Readable): Readable {
     if (input instanceof Readable) {
       return input;
     }
@@ -65,7 +178,7 @@ class WorkbookReader extends EventEmitter {
     throw new Error(`Could not recognise input: ${input}`);
   }
 
-  async read(input?: any, options?: WorkbookReaderOptions): Promise<void> {
+  async read(input?: string | Readable, options?: WorkbookReaderOptions): Promise<void> {
     try {
       for await (const { eventType, value } of this.parse(input, options)) {
         switch (eventType) {
@@ -88,7 +201,7 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  async *[Symbol.asyncIterator](): AsyncIterableIterator<any> {
+  async *[Symbol.asyncIterator](): AsyncIterableIterator<WorksheetReader> {
     for await (const { eventType, value } of this.parse()) {
       if (eventType === "worksheet") {
         yield value;
@@ -97,11 +210,14 @@ class WorkbookReader extends EventEmitter {
   }
 
   async *parse(
-    input?: any,
+    input?: string | Readable,
     options?: WorkbookReaderOptions
-  ): AsyncIterableIterator<{ eventType: string; value: any }> {
+  ): AsyncIterableIterator<ParseEvent> {
     if (options) {
-      this.options = options;
+      // Note: This replaces all options, not merging with constructor defaults.
+      // This is intentional for backwards compatibility - passing partial options
+      // to parse() will leave unspecified options as undefined.
+      this.options = options as typeof this.options;
     }
     const stream = (this.stream = this._getStream(input || this.input));
     const zip = createParse({ forceStream: true });
@@ -199,27 +315,29 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  _emitEntry(payload: any): void {
+  _emitEntry(payload: EntryPayload): void {
     if (this.options.entries === "emit") {
       this.emit("entry", payload);
     }
   }
 
-  async _parseRels(entry: any): Promise<void> {
+  async _parseRels(entry: NodeJS.ReadableStream): Promise<void> {
     const xform = new RelationshipsXform();
     this.workbookRels = await xform.parseStream(iterateStream(entry));
   }
 
-  async _parseWorkbook(entry: any): Promise<void> {
+  async _parseWorkbook(entry: NodeJS.ReadableStream): Promise<void> {
     this._emitEntry({ type: "workbook" });
 
     const workbook = new WorkbookXform();
     this.model = await workbook.parseStream(iterateStream(entry));
 
-    this.properties = workbook.map.workbookPr;
+    this.properties = workbook.map.workbookPr as WorkbookPropertiesXform;
   }
 
-  async *_parseSharedStrings(entry: any): AsyncIterableIterator<{ index: number; text: any }> {
+  async *_parseSharedStrings(
+    entry: NodeJS.ReadableStream
+  ): AsyncIterableIterator<{ index: number; text: SharedStringValue }> {
     this._emitEntry({ type: "shared-strings" });
     switch (this.options.sharedStrings) {
       case "cache":
@@ -232,9 +350,9 @@ class WorkbookReader extends EventEmitter {
     }
 
     let text: string | null = null;
-    let richText: any[] = [];
+    let richText: Array<{ font: Partial<Font> | null; text: string | null }> = [];
     let index = 0;
-    let font: any = null;
+    let font: Partial<Font> | null = null;
     let inRichText = false;
     for await (const events of parseSax(iterateStream(entry))) {
       for (const { eventType, value } of events) {
@@ -340,7 +458,7 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  async _parseStyles(entry: any): Promise<void> {
+  async _parseStyles(entry: NodeJS.ReadableStream): Promise<void> {
     this._emitEntry({ type: "styles" });
     if (this.options.styles === "cache") {
       this.styles = new StylesXform();
@@ -349,24 +467,24 @@ class WorkbookReader extends EventEmitter {
   }
 
   *_parseWorksheet(
-    iterator: any,
+    iterator: AsyncIterable<unknown>,
     sheetNo: string
-  ): IterableIterator<{ eventType: string; value: any }> {
+  ): IterableIterator<WorksheetReadyEvent> {
     this._emitEntry({ type: "worksheet", id: sheetNo });
     const worksheetReader = new WorksheetReader({
       workbook: this,
       id: parseInt(sheetNo, 10),
-      iterator,
-      options: this.options
+      iterator: iterator as AsyncIterable<never>,
+      options: this.options as InternalWorksheetOptions
     });
 
     const matchingRel = (this.workbookRels || []).find(
-      (rel: any) => rel.Target === `worksheets/sheet${sheetNo}.xml`
+      rel => rel.Target === `worksheets/sheet${sheetNo}.xml`
     );
     const matchingSheet =
       matchingRel &&
       this.model &&
-      (this.model.sheets || []).find((sheet: any) => sheet.rId === matchingRel.Id);
+      (this.model.sheets || []).find(sheet => sheet.rId === matchingRel.Id);
     if (matchingSheet) {
       worksheetReader.id = matchingSheet.id;
       worksheetReader.name = matchingSheet.name;
@@ -378,15 +496,15 @@ class WorkbookReader extends EventEmitter {
   }
 
   *_parseHyperlinks(
-    iterator: any,
+    iterator: AsyncIterable<unknown>,
     sheetNo: string
-  ): IterableIterator<{ eventType: string; value: any }> {
+  ): IterableIterator<HyperlinksEvent> {
     this._emitEntry({ type: "hyperlinks", id: sheetNo });
     const hyperlinksReader = new HyperlinkReader({
       workbook: this,
       id: parseInt(sheetNo, 10),
-      iterator,
-      options: this.options
+      iterator: iterator as AsyncIterable<never>,
+      options: this.options as InternalWorksheetOptions
     });
     if (this.options.hyperlinks === "emit") {
       yield { eventType: "hyperlinks", value: hyperlinksReader };

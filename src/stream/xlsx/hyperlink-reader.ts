@@ -2,15 +2,17 @@ import { EventEmitter } from "events";
 import { parseSax } from "../../utils/parse-sax.js";
 import { Enums } from "../../doc/enums.js";
 import { RelType } from "../../xlsx/rel-type.js";
+import type { WorkbookReader, InternalWorksheetOptions } from "./workbook-reader.js";
 
-interface HyperlinkReaderOptions {
-  workbook: any;
+export interface HyperlinkReaderOptions {
+  workbook: WorkbookReader;
   id: number;
-  iterator: any;
-  options: any;
+  iterator: AsyncIterable<unknown>;
+  options: InternalWorksheetOptions;
 }
 
-interface Hyperlink {
+/** Hyperlink relationship parsed from worksheet rels */
+export interface Hyperlink {
   type: number;
   rId: string;
   target: string;
@@ -18,11 +20,11 @@ interface Hyperlink {
 }
 
 class HyperlinkReader extends EventEmitter {
-  workbook: any;
+  workbook: WorkbookReader;
   id: number;
-  iterator: any;
-  options: any;
-  hyperlinks?: { [key: string]: Hyperlink };
+  iterator: AsyncIterable<unknown>;
+  options: InternalWorksheetOptions;
+  hyperlinks?: Record<string, Hyperlink>;
 
   constructor({ workbook, id, iterator, options }: HyperlinkReaderOptions) {
     super();
@@ -48,7 +50,7 @@ class HyperlinkReader extends EventEmitter {
   async read(): Promise<void> {
     const { iterator, options } = this;
     let emitHyperlinks = false;
-    let hyperlinks: { [key: string]: Hyperlink } | null = null;
+    let hyperlinks: Record<string, Hyperlink> | null = null;
     switch (options.hyperlinks) {
       case "emit":
         emitHyperlinks = true;
@@ -76,7 +78,7 @@ class HyperlinkReader extends EventEmitter {
                 case RelType.Hyperlink:
                   {
                     const relationship: Hyperlink = {
-                      type: Enums.RelationshipType.Styles,
+                      type: Enums.RelationshipType.Hyperlink,
                       rId,
                       target: node.attributes.Target,
                       targetMode: node.attributes.TargetMode

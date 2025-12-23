@@ -741,28 +741,6 @@ export interface TableProperties {
 export type TableColumn = Required<TableColumnProperties>;
 
 // ============================================================================
-// XLSX Types
-// ============================================================================
-export interface JSZipGeneratorOptions {
-  compression: "STORE" | "DEFLATE";
-  compressionOptions: null | {
-    level: number;
-  };
-}
-
-export interface XlsxReadOptions {
-  ignoreNodes?: string[];
-  maxRows?: number;
-  maxCols?: number;
-}
-
-export interface XlsxWriteOptions {
-  zip?: Partial<JSZipGeneratorOptions>;
-  useSharedStrings?: boolean;
-  useStyles?: boolean;
-}
-
-// ============================================================================
 // Media Types
 // ============================================================================
 export interface Media {
@@ -781,6 +759,10 @@ export interface AddWorksheetOptions {
   headerFooter?: Partial<HeaderFooter>;
   views?: Array<Partial<WorksheetView>>;
   state?: WorksheetState;
+  /** Specifies whether to use shared strings. Overrides workbook setting. */
+  useSharedStrings?: boolean;
+  /** Apply an auto filter to the worksheet */
+  autoFilter?: AutoFilter;
 }
 
 // ============================================================================

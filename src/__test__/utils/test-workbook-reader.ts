@@ -27,6 +27,7 @@ const testWorkbookReader = {
   pageSetup: fix(pageSetupJson),
 
   checkBook(filename: string): Promise<void> {
+    // @ts-expect-error - Legacy test pattern: passing empty object to constructor and input to read()
     const wb = new WorkbookReader({});
 
     // expectations

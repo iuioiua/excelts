@@ -14,39 +14,107 @@ import { SharedStringsXform } from "../../xlsx/xform/strings/shared-strings-xfor
 import { WorksheetWriter } from "./worksheet-writer.js";
 import { theme1Xml } from "../../xlsx/xml/theme1.js";
 import type Stream from "stream";
+import type { Image, WorkbookView, AddWorksheetOptions } from "../../types.js";
 
-interface WorkbookWriterOptions {
+/** Internal medium type for storing images in workbook */
+interface Medium extends Image {
+  type: "image";
+  name: string;
+}
+
+/** Internal comment reference type for tracking comment files */
+interface CommentRef {
+  commentName: string;
+  vmlDrawing: string;
+}
+
+export interface ZlibOptions {
+  /** @default constants.Z_NO_FLUSH */
+  flush?: number;
+  /** @default constants.Z_FINISH */
+  finishFlush?: number;
+  /** @default 16*1024 */
+  chunkSize?: number;
+  windowBits?: number;
+  /** compression level (0-9) */
+  level?: number;
+  memLevel?: number;
+  strategy?: number;
+  dictionary?: Buffer | NodeJS.TypedArray | DataView | ArrayBuffer;
+}
+
+export interface ZipOptions {
+  comment?: string;
+  forceLocalTime?: boolean;
+  forceZip64?: boolean;
+  store?: boolean;
+  zlib?: Partial<ZlibOptions>;
+  /** Alternative way to set compression level */
+  compressionOptions?: {
+    level?: number;
+  };
+}
+
+export interface WorkbookWriterOptions {
+  /** The date the workbook was created */
   created?: Date;
+  /** The date the workbook was last modified */
   modified?: Date;
+  /** The author of the workbook */
   creator?: string;
+  /** Who last modified the workbook */
   lastModifiedBy?: string;
+  /** The date the workbook was last printed */
   lastPrinted?: Date;
+  /** Specifies whether to use shared strings in the workbook. Default is false */
   useSharedStrings?: boolean;
+  /** Specifies whether to add style information to the workbook. Default is false */
   useStyles?: boolean;
-  zip?: any;
+  /** Zip compression options */
+  zip?: Partial<ZipOptions>;
+  /** Specifies a writable stream to write the XLSX workbook to */
   stream?: Stream;
+  /** If stream not specified, this field specifies the path to a file to write the XLSX workbook to */
   filename?: string;
 }
 
 class WorkbookWriter {
+  /** The date the workbook was created */
   created: Date;
+  /** The date the workbook was last modified */
   modified: Date;
+  /** The author of the workbook */
   creator: string;
+  /** Who last modified the workbook */
   lastModifiedBy: string;
+  /** The date the workbook was last printed */
   lastPrinted?: Date;
+  /** Whether to use shared strings */
   useSharedStrings: boolean;
-  sharedStrings: any;
-  styles: any;
-  _definedNames: any;
-  _worksheets: any[];
-  views: any[];
-  zipOptions?: any;
+  /** Shared strings collection - internal use */
+  sharedStrings: SharedStrings;
+  /** Style manager - internal use */
+  styles: StylesXform;
+  /** Defined names - internal use */
+  _definedNames: DefinedNames;
+  /** Worksheets collection */
+  _worksheets: WorksheetWriter[];
+  /** Workbook views controls how many separate windows Excel will open */
+  views: WorkbookView[];
+  /** Zip options - internal use */
+  zipOptions?: Partial<ZipOptions>;
+  /** Compression level (0-9) */
   compressionLevel: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-  media: any[];
-  commentRefs: any[];
-  zip: any;
-  stream: any;
-  promise: Promise<any>;
+  /** Media collection (images) - internal use */
+  media: Medium[];
+  /** Comment references - internal use */
+  commentRefs: CommentRef[];
+  /** Zip instance - internal use */
+  zip: Zip;
+  /** Output stream - internal use */
+  stream: Stream | fs.WriteStream | InstanceType<typeof StreamBuf>;
+  /** Internal promise for async operations */
+  promise: Promise<void[]>;
 
   constructor(options: WorkbookWriterOptions = {}) {
     this.created = options.created || new Date();
@@ -112,11 +180,11 @@ class WorkbookWriter {
     this.promise = Promise.all([this.addThemes(), this.addOfficeRels()]);
   }
 
-  get definedNames(): any {
+  get definedNames(): DefinedNames {
     return this._definedNames;
   }
 
-  _openStream(path: string): any {
+  _openStream(path: string): InstanceType<typeof StreamBuf> {
     const stream = new StreamBuf({ bufSize: 65536, batch: true });
 
     // Create a ZipDeflate for this file with compression
@@ -144,7 +212,7 @@ class WorkbookWriter {
     return stream;
   }
 
-  _addFile(data: string | Buffer, name: string, base64?: boolean): void {
+  _addFile(data: string | Uint8Array, name: string, base64?: boolean): void {
     // Helper method to add a file to the zip using fflate with compression
     const zipFile = new ZipDeflate(name, { level: this.compressionLevel });
     this.zip.add(zipFile);
@@ -152,12 +220,12 @@ class WorkbookWriter {
     let buffer: Uint8Array;
     if (base64) {
       // Use Buffer.from for efficient base64 decoding
-      const base64Data = typeof data === "string" ? data : data.toString();
+      const base64Data = typeof data === "string" ? data : new TextDecoder().decode(data);
       buffer = Buffer.from(base64Data, "base64");
     } else if (typeof data === "string") {
       buffer = Buffer.from(data, "utf8");
     } else {
-      buffer = new Uint8Array(data);
+      buffer = data;
     }
 
     zipFile.push(buffer, true); // true = final chunk
@@ -179,16 +247,16 @@ class WorkbookWriter {
     // if there are any uncommitted worksheets, commit them now and wait
     const promises = this._worksheets.map(commitWorksheet);
     if (promises.length) {
-      return Promise.all(promises) as any;
+      return Promise.all(promises).then(() => {});
     }
     return Promise.resolve();
   }
 
-  async commit(): Promise<any> {
-    // commit all worksheets, then add suplimentary files
+  async commit(): Promise<void> {
+    // commit all worksheets, then add supplementary files
     await this.promise;
-    await this.addMedia();
     await this._commitWorksheets();
+    await this.addMedia();
     await Promise.all([
       this.addContentTypes(),
       this.addApp(),
@@ -212,34 +280,45 @@ class WorkbookWriter {
     return this._worksheets.length || 1;
   }
 
-  addImage(image: any): number {
+  /**
+   * Add Image to Workbook and return the id
+   */
+  addImage(image: Image): number {
     const id = this.media.length;
-    const medium = Object.assign({}, image, {
-      type: "image",
+    const medium: Medium = {
+      ...image,
+      type: "image" as const,
       name: `image${id}.${image.extension}`
-    });
+    };
     this.media.push(medium);
     return id;
   }
 
-  getImage(id: number): any {
+  /**
+   * Get image by id
+   */
+  getImage(id: number): Image | undefined {
     return this.media[id];
   }
 
-  addWorksheet(name?: string, options: any = {}): any {
+  /**
+   * Add a new worksheet and return a reference to it
+   */
+  addWorksheet(name?: string, options?: Partial<AddWorksheetOptions>): WorksheetWriter {
     // it's possible to add a worksheet with different than default
     // shared string handling
     // in fact, it's even possible to switch it mid-sheet
+    const opts = options || {};
     const useSharedStrings =
-      options.useSharedStrings !== undefined ? options.useSharedStrings : this.useSharedStrings;
+      opts.useSharedStrings !== undefined ? opts.useSharedStrings : this.useSharedStrings;
 
-    if (options.tabColor) {
+    if ((opts as any).tabColor) {
       console.trace("tabColor option has moved to { properties: tabColor: {...} }");
-      options.properties = Object.assign(
+      opts.properties = Object.assign(
         {
-          tabColor: options.tabColor
+          tabColor: (opts as any).tabColor
         },
-        options.properties
+        opts.properties
       );
     }
 
@@ -251,19 +330,22 @@ class WorkbookWriter {
       name,
       workbook: this,
       useSharedStrings,
-      properties: options.properties,
-      state: options.state,
-      pageSetup: options.pageSetup,
-      views: options.views,
-      autoFilter: options.autoFilter,
-      headerFooter: options.headerFooter
+      properties: opts.properties,
+      state: opts.state,
+      pageSetup: opts.pageSetup,
+      views: opts.views,
+      autoFilter: opts.autoFilter,
+      headerFooter: opts.headerFooter
     });
 
     this._worksheets[id] = worksheet;
     return worksheet;
   }
 
-  getWorksheet(id?: string | number): any {
+  /**
+   * Fetch sheet by name or id
+   */
+  getWorksheet(id?: string | number): WorksheetWriter | undefined {
     if (id === undefined) {
       return this._worksheets.find(() => true);
     }
@@ -271,7 +353,7 @@ class WorkbookWriter {
       return this._worksheets[id];
     }
     if (typeof id === "string") {
-      return this._worksheets.find((worksheet: any) => worksheet && worksheet.name === id);
+      return this._worksheets.find(worksheet => worksheet && worksheet.name === id);
     }
     return undefined;
   }
@@ -318,18 +400,18 @@ class WorkbookWriter {
     });
   }
 
-  addMedia(): Promise<any> {
+  addMedia(): Promise<void[]> {
     return Promise.all(
       this.media.map(async medium => {
         if (medium.type === "image") {
           const filename = `xl/media/${medium.name}`;
           if (medium.filename) {
-            const data = await new Promise<Buffer>((resolve, reject) => {
+            const data = await new Promise<Uint8Array>((resolve, reject) => {
               fs.readFile(medium.filename, (err, data) => {
                 if (err) {
                   reject(err);
                 } else {
-                  resolve(data);
+                  resolve(new Uint8Array(data));
                 }
               });
             });
@@ -338,13 +420,13 @@ class WorkbookWriter {
           }
           if (medium.buffer) {
             this._addFile(medium.buffer, filename);
-            return Promise.resolve();
+            return;
           }
           if (medium.base64) {
             const dataimg64 = medium.base64;
             const content = dataimg64.substring(dataimg64.indexOf(",") + 1);
             this._addFile(content, filename, true);
-            return Promise.resolve();
+            return;
           }
         }
         throw new Error("Unsupported media");

@@ -8,6 +8,7 @@ import { Column } from "../../doc/column.js";
 import { SheetRelsWriter } from "./sheet-rels-writer.js";
 import { SheetCommentsWriter } from "./sheet-comments-writer.js";
 import { DataValidations } from "../../doc/data-validations.js";
+import type { StreamBuf } from "../../utils/stream-buf.js";
 
 const xmlBuffer = new StringBuf();
 
@@ -29,7 +30,17 @@ import { PictureXform } from "../../xlsx/xform/sheet/picture-xform.js";
 import { ConditionalFormattingsXform } from "../../xlsx/xform/sheet/cf/conditional-formattings-xform.js";
 import { HeaderFooterXform } from "../../xlsx/xform/sheet/header-footer-xform.js";
 import { RowBreaksXform } from "../../xlsx/xform/sheet/row-breaks-xform.js";
-import type { RowBreak } from "../../types.js";
+import type {
+  RowBreak,
+  PageSetup,
+  HeaderFooter,
+  WorksheetProperties,
+  WorksheetView,
+  WorksheetState,
+  AutoFilter,
+  WorksheetProtection,
+  ConditionalFormattingOptions
+} from "../../types.js";
 
 // since prepare and render are functional, we can use singletons
 const xform = {
@@ -63,48 +74,69 @@ const xform = {
 interface WorksheetWriterOptions {
   id: number;
   name?: string;
+  // WorkbookWriter reference - any due to circular dependency
   workbook: any;
   useSharedStrings?: boolean;
-  properties?: any;
-  state?: string;
-  pageSetup?: any;
-  views?: any[];
-  autoFilter?: any;
-  headerFooter?: any;
+  properties?: Partial<WorksheetProperties>;
+  state?: WorksheetState;
+  pageSetup?: Partial<PageSetup>;
+  views?: Partial<WorksheetView>[];
+  autoFilter?: AutoFilter;
+  headerFooter?: Partial<HeaderFooter>;
 }
 
 class WorksheetWriter {
   id: number;
   name: string;
-  state: string;
-  _rows: any[] | null;
-  _columns: any[] | null;
-  _keys: { [key: string]: any };
-  _merges: any[];
-  _sheetRelsWriter: any;
-  _sheetCommentsWriter: any;
-  _dimensions: any;
+  state: WorksheetState;
+  /** Rows stored while being worked on. Set to null after commit. */
+  _rows: Row[] | null;
+  /** Column definitions */
+  _columns: Column[] | null;
+  /** Column keys mapping: key => Column */
+  _keys: { [key: string]: Column };
+  /** Merged cell ranges */
+  _merges: Dimensions[];
+  _sheetRelsWriter: SheetRelsWriter;
+  _sheetCommentsWriter: SheetCommentsWriter;
+  _dimensions: Dimensions;
   _rowZero: number;
   committed: boolean;
-  dataValidations: any;
-  _formulae: { [key: string]: any };
+  dataValidations: DataValidations;
+  /** Shared formulae by address */
+  _formulae: { [key: string]: unknown };
   _siFormulae: number;
-  conditionalFormatting: any[];
+  conditionalFormatting: ConditionalFormattingOptions[];
   rowBreaks: RowBreak[];
-  properties: any;
-  headerFooter: any;
-  pageSetup: any;
+  properties: Partial<WorksheetProperties> & {
+    defaultRowHeight: number;
+    dyDescent: number;
+    outlineLevelCol: number;
+    outlineLevelRow: number;
+  };
+  headerFooter: Partial<HeaderFooter>;
+  pageSetup: Partial<PageSetup> & { margins: PageSetup["margins"] };
   useSharedStrings: boolean;
+  // WorkbookWriter - circular dependency, keep as any
   _workbook: any;
   hasComments: boolean;
-  _views: any[];
-  autoFilter: any;
-  _media: any[];
-  sheetProtection: any;
-  _stream?: any;
+  _views: Partial<WorksheetView>[];
+  autoFilter: AutoFilter | null;
+  _media: unknown[];
+  sheetProtection: {
+    sheet?: boolean;
+    algorithmName?: string;
+    saltValue?: string;
+    spinCount?: number;
+    hashValue?: string;
+    [key: string]: unknown;
+  } | null;
+  _stream?: InstanceType<typeof StreamBuf>;
   startedData: boolean;
-  _background?: any;
+  _background?: { imageId?: number; rId?: string };
   _headerRowCount?: number;
+  /** Relationship Id - assigned by WorkbookWriter */
+  rId?: string;
 
   constructor(options: WorksheetWriterOptions) {
     // in a workbook, each sheet will have a number
@@ -311,11 +343,11 @@ class WorksheetWriter {
   }
 
   // return the current dimensions of the writer
-  get dimensions(): any {
+  get dimensions(): Dimensions {
     return this._dimensions;
   }
 
-  get views(): any[] {
+  get views(): Partial<WorksheetView>[] {
     return this._views;
   }
 
@@ -323,13 +355,13 @@ class WorksheetWriter {
   // Columns
 
   // get the current columns array.
-  get columns(): any[] | null {
+  get columns(): Column[] | null {
     return this._columns;
   }
 
   // set the columns from an array of column definitions.
   // Note: any headers defined will overwrite existing values.
-  set columns(value: any[]) {
+  set columns(value: Partial<Column>[]) {
     // calculate max header row count
     this._headerRowCount = value.reduce((pv, cv) => {
       const headerCount = (cv.header && 1) || (cv.headers && cv.headers.length) || 0;
@@ -346,11 +378,11 @@ class WorksheetWriter {
     });
   }
 
-  getColumnKey(key: string): any {
+  getColumnKey(key: string): Column | undefined {
     return this._keys[key];
   }
 
-  setColumnKey(key: string, value: any): void {
+  setColumnKey(key: string, value: Column): void {
     this._keys[key] = value;
   }
 
@@ -358,13 +390,13 @@ class WorksheetWriter {
     delete this._keys[key];
   }
 
-  eachColumnKey(f: (column: any, key: string) => void): void {
+  eachColumnKey(f: (column: Column, key: string) => void): void {
     Object.keys(this._keys).forEach(key => f(this._keys[key], key));
   }
 
   // get a single column by col number. If it doesn't exist, it and any gaps before it
   // are created.
-  getColumn(c: string | number): any {
+  getColumn(c: string | number): Column {
     if (typeof c === "string") {
       // if it matches a key'd column, return that
       const col = this._keys[c];
@@ -394,26 +426,36 @@ class WorksheetWriter {
   }
 
   // iterate over every uncommitted row in the worksheet, including maybe empty rows
-  eachRow(options: any, iteratee?: (row: any, rowNumber: number) => void): void {
-    if (!iteratee) {
-      iteratee = options;
-      options = undefined;
+  eachRow(
+    options: { includeEmpty?: boolean } | ((row: Row, rowNumber: number) => void),
+    iteratee?: (row: Row, rowNumber: number) => void
+  ): void {
+    let callback: ((row: Row, rowNumber: number) => void) | undefined;
+    let opts: { includeEmpty?: boolean } | undefined;
+
+    if (typeof options === "function") {
+      callback = options;
+      opts = undefined;
+    } else {
+      callback = iteratee;
+      opts = options;
     }
-    if (options && options.includeEmpty) {
+
+    if (opts && opts.includeEmpty) {
       const n = this._nextRow;
       for (let i = this._rowZero; i < n; i++) {
-        iteratee!(this.getRow(i), i);
+        callback!(this.getRow(i), i);
       }
     } else {
       this._rows!.forEach(row => {
         if (row.hasValues) {
-          iteratee!(row, row.number);
+          callback!(row, row.number);
         }
       });
     }
   }
 
-  _commitRow(cRow: any): void {
+  _commitRow(cRow: Row): void {
     // since rows must be written in order, we commit all rows up till and including cRow
     let found = false;
     while (this._rows!.length && !found) {
@@ -427,7 +469,7 @@ class WorksheetWriter {
     }
   }
 
-  get lastRow(): any {
+  get lastRow(): Row | undefined {
     // returns last uncommitted row
     if (this._rows!.length) {
       return this._rows![this._rows!.length - 1];
@@ -436,12 +478,12 @@ class WorksheetWriter {
   }
 
   // find a row (if exists) by row number
-  findRow(rowNumber: number): any {
+  findRow(rowNumber: number): Row | undefined {
     const index = rowNumber - this._rowZero;
     return this._rows![index];
   }
 
-  getRow(rowNumber: number): any {
+  getRow(rowNumber: number): Row {
     const index = rowNumber - this._rowZero;
 
     // may fail if rows have been comitted
@@ -455,7 +497,7 @@ class WorksheetWriter {
     return row;
   }
 
-  addRow(value: any): any {
+  addRow(value: any[] | Record<string, any>): Row {
     const row = new Row(this as any, this._nextRow);
     this._rows![row.number - this._rowZero] = row;
     row.values = value;
@@ -466,20 +508,20 @@ class WorksheetWriter {
   // Cells
 
   // returns the cell at [r,c] or address given by r. If not found, return undefined
-  findCell(r: any, c?: number): any {
+  findCell(r: string | number, c?: number): any {
     const address: any = colCache.getAddress(r, c);
     const row = this.findRow(address.row);
     return row ? row.findCell(address.column) : undefined;
   }
 
   // return the cell at [r,c] or address given by r. If not found, create a new one.
-  getCell(r: any, c?: number): any {
+  getCell(r: string | number, c?: number): any {
     const address = colCache.getAddress(r, c);
     const row = this.getRow(address.row);
     return row.getCellEx(address);
   }
 
-  mergeCells(...cells: any[]): void {
+  mergeCells(...cells: (string | number)[]): void {
     // may fail if rows have been comitted
     const dimensions = new Dimensions(cells);
 
@@ -506,11 +548,13 @@ class WorksheetWriter {
 
   // ===========================================================================
   // Conditional Formatting
-  addConditionalFormatting(cf: any): void {
+  addConditionalFormatting(cf: ConditionalFormattingOptions): void {
     this.conditionalFormatting.push(cf);
   }
 
-  removeConditionalFormatting(filter: any): void {
+  removeConditionalFormatting(
+    filter?: number | ((cf: ConditionalFormattingOptions) => boolean)
+  ): void {
     if (typeof filter === "number") {
       this.conditionalFormatting.splice(filter, 1);
     } else if (filter instanceof Function) {
@@ -534,7 +578,7 @@ class WorksheetWriter {
 
   // =========================================================================
   // Worksheet Protection
-  protect(password?: string, options?: any): Promise<void> {
+  protect(password?: string, options?: Partial<WorksheetProtection>): Promise<void> {
     // TODO: make this function truly async
     // perhaps marshal to worker thread or something
     return new Promise(resolve => {
@@ -581,7 +625,11 @@ class WorksheetWriter {
     this.stream.write(xmlBuffer);
   }
 
-  _writeSheetProperties(xmlBuf: any, properties: any, pageSetup: any): void {
+  _writeSheetProperties(
+    xmlBuf: StringBuf,
+    properties: Partial<WorksheetProperties> | undefined,
+    pageSetup: Partial<PageSetup> | undefined
+  ): void {
     const sheetPropertiesModel = {
       outlineProperties: properties && properties.outlineProperties,
       tabColor: properties && properties.tabColor,
@@ -596,7 +644,10 @@ class WorksheetWriter {
     xmlBuf.addText(xform.sheetProperties.toXml(sheetPropertiesModel));
   }
 
-  _writeSheetFormatProperties(xmlBuf: any, properties: any): void {
+  _writeSheetFormatProperties(
+    xmlBuf: StringBuf,
+    properties: Partial<WorksheetProperties> | undefined
+  ): void {
     const sheetFormatPropertiesModel = properties
       ? {
           defaultRowHeight: properties.defaultRowHeight,

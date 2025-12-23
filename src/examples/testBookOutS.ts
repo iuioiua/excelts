@@ -21,78 +21,78 @@ const fonts = {
     name: "Comic Sans MS",
     family: 4,
     size: 16,
-    underline: "double",
+    underline: "double" as const,
     bold: true
   }
 };
 
 const alignments = [
-  { text: "Top Left", alignment: { horizontal: "left", vertical: "top" } },
+  { text: "Top Left", alignment: { horizontal: "left" as const, vertical: "top" as const } },
   {
     text: "Middle Centre",
-    alignment: { horizontal: "center", vertical: "middle" }
+    alignment: { horizontal: "center" as const, vertical: "middle" as const }
   },
   {
     text: "Bottom Right",
-    alignment: { horizontal: "right", vertical: "bottom" }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const }
   },
   { text: "Wrap Text", alignment: { wrapText: true } },
   { text: "Indent 1", alignment: { indent: 1 } },
   { text: "Indent 2", alignment: { indent: 2 } },
   {
     text: "Rotate 15",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: 15 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: 15 }
   },
   {
     text: "Rotate 30",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: 30 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: 30 }
   },
   {
     text: "Rotate 45",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: 45 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: 45 }
   },
   {
     text: "Rotate 60",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: 60 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: 60 }
   },
   {
     text: "Rotate 75",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: 75 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: 75 }
   },
   {
     text: "Rotate 90",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: 90 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: 90 }
   },
   {
     text: "Rotate -15",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: -55 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: -55 }
   },
   {
     text: "Rotate -30",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: -30 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: -30 }
   },
   {
     text: "Rotate -45",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: -45 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: -45 }
   },
   {
     text: "Rotate -60",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: -60 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: -60 }
   },
   {
     text: "Rotate -75",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: -75 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: -75 }
   },
   {
     text: "Rotate -90",
-    alignment: { horizontal: "right", vertical: "bottom", textRotation: -90 }
+    alignment: { horizontal: "right" as const, vertical: "bottom" as const, textRotation: -90 }
   },
   {
     text: "Vertical Text",
     alignment: {
-      horizontal: "right",
-      vertical: "bottom",
-      textRotation: "vertical"
+      horizontal: "right" as const,
+      vertical: "bottom" as const,
+      textRotation: "vertical" as const
     }
   }
 ];
@@ -133,19 +133,19 @@ const borders = {
 
 const fills = {
   redDarkVertical: {
-    type: "pattern",
-    pattern: "darkVertical",
+    type: "pattern" as const,
+    pattern: "darkVertical" as const,
     fgColor: { argb: "FFFF0000" }
   },
   redGreenDarkTrellis: {
-    type: "pattern",
-    pattern: "darkTrellis",
+    type: "pattern" as const,
+    pattern: "darkTrellis" as const,
     fgColor: { argb: "FFFF0000" },
     bgColor: { argb: "FF00FF00" }
   },
   blueWhiteHGrad: {
-    type: "gradient",
-    gradient: "angle",
+    type: "gradient" as const,
+    gradient: "angle" as const,
     degree: 0,
     stops: [
       { position: 0, color: { argb: "FF0000FF" } },
@@ -153,8 +153,8 @@ const fills = {
     ]
   },
   rgbPathGrad: {
-    type: "gradient",
-    gradient: "path",
+    type: "gradient" as const,
+    gradient: "path" as const,
     center: { left: 0.5, top: 0.5 },
     stops: [
       { position: 0, color: { argb: "FFFF0000" } },

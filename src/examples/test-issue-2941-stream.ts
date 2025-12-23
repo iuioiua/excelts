@@ -19,7 +19,7 @@ async function main() {
     filename: "temp/test-issue-2941-stream.xlsx",
     useStyles: false,
     useSharedStrings: false,
-    zip: { compression: "DEFLATE", compressionOptions: { level: 1 } }
+    zip: { zlib: { level: 1 } }
   });
 
   console.timeLog("xlsx", "Created workbook writer");

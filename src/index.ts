@@ -15,6 +15,30 @@ export * from "./doc/anchor.js";
 export { Table } from "./doc/table.js";
 export { DataValidations } from "./doc/data-validations.js";
 
+// Export streaming reader types
+export type {
+  WorkbookReaderOptions,
+  ParseEvent,
+  SharedStringEvent,
+  WorksheetReadyEvent,
+  HyperlinksEvent
+} from "./stream/xlsx/workbook-reader.js";
+
+export type {
+  WorksheetReaderOptions,
+  WorksheetEvent,
+  RowEvent,
+  HyperlinkEvent,
+  WorksheetHyperlink
+} from "./stream/xlsx/worksheet-reader.js";
+
+// Export streaming writer types
+export type {
+  WorkbookWriterOptions,
+  ZipOptions,
+  ZlibOptions
+} from "./stream/xlsx/workbook-writer.js";
+
 // Export pivot table types
 export type {
   PivotTable,

@@ -59,7 +59,7 @@ const fonts = {
     name: "Comic Sans MS",
     family: 4,
     size: 8,
-    underline: "double",
+    underline: "double" as const,
     bold: true
   }
 };
@@ -171,7 +171,7 @@ let mainPromise = Promise.resolve();
 // var mainPromise = execute(125, 'stream', 'plain', 'own');
 counts.forEach(count => {
   mainPromise = mainPromise.then(() => {
-    resultSheet.addRow().getCell("count").value = count;
+    resultSheet.addRow([]).getCell("count").value = count;
   });
   workbooks.forEach(workbook => {
     styles.forEach(style => {
