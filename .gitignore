@@ -42,3 +42,5 @@ spec/integration/data/gold
 # Test generated files
 *.xlsx
 test.xlsx
+# Vitest browser screenshots (empty in headless mode)
+__screenshots__

@@ -141,7 +141,9 @@ const url = URL.createObjectURL(blob);
 
 ### 浏览器版本注意事项
 
-- **不支持 CSV 操作**（需要 Node.js 的 `fast-csv` 模块）
+- **支持 CSV 操作**（使用原生 RFC 4180 标准实现）
+  - 使用 `csv.load(stringOrArrayBuffer)` 读取 CSV
+  - 使用 `csv.writeString()` 或 `csv.writeBuffer()` 写入 CSV
 - 使用 `xlsx.load(arrayBuffer)` 代替 `xlsx.readFile()`
 - 使用 `xlsx.writeBuffer()` 代替 `xlsx.writeFile()`
 - 完全支持带密码的工作表保护（纯 JS SHA-512 实现）

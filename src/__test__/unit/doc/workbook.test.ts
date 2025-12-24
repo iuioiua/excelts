@@ -186,11 +186,6 @@ describe("Workbook", () => {
     expect(ws.getCell("A1").type).toBe(Enums.ValueType.RichText);
   });
 
-  it.skip("serialises to model", () => {
-    const _wb = createSimpleWorkbook();
-    // Note: This test is skipped in original spec due to model comparison complexity
-  });
-
   it("returns undefined for non-existant sheet", () => {
     const wb = new Workbook();
     wb.addWorksheet("first");

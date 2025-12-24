@@ -141,7 +141,9 @@ const url = URL.createObjectURL(blob);
 
 ### Browser-Specific Notes
 
-- **CSV operations are not supported** in browser (requires Node.js `fast-csv` module)
+- **CSV operations are supported** using native RFC 4180 implementation
+  - Use `csv.load(stringOrArrayBuffer)` to read CSV
+  - Use `csv.writeString()` or `csv.writeBuffer()` to write CSV
 - Use `xlsx.load(arrayBuffer)` instead of `xlsx.readFile()`
 - Use `xlsx.writeBuffer()` instead of `xlsx.writeFile()`
 - Worksheet protection with passwords is fully supported (pure JS SHA-512)
