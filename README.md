@@ -116,6 +116,25 @@ const workbook = new Workbook();
 // ... use workbook API
 ```
 
+### Vite Configuration
+
+When using ExcelTS with Vite, you need to install Node.js polyfills:
+
+```bash
+npm install -D vite-plugin-node-polyfills
+```
+
+Configure your `vite.config.ts`:
+
+```typescript
+import { defineConfig } from 'vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
+
+export default defineConfig({
+  plugins: [nodePolyfills()]
+})
+```
+
 ## Requirements
 
 ### Node.js
