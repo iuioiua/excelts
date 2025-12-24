@@ -1,38 +1,25 @@
 /**
- * Native compression utilities using browser APIs
+ * Browser compression utilities using Web Streams API
  *
  * Uses CompressionStream API (Chrome 80+, Firefox 113+, Safari 16.4+)
- * Uses "deflate-raw" format which is required for ZIP files
- * (raw DEFLATE without zlib header/trailer)
+ * with "deflate-raw" format (required for ZIP files)
  */
 
-/**
- * Compression options
- */
-export interface CompressOptions {
-  /**
-   * Compression level (0-9)
-   * - 0: No compression (STORE)
-   * - 1-9: Compression levels
-   *
-   * Note: CompressionStream does not support level configuration,
-   * it uses a fixed level (~6)
-   */
-  level?: number;
-}
+import {
+  type CompressOptions,
+  hasCompressionStream,
+  compressWithStream,
+  decompressWithStream
+} from "./compress.base.js";
+
+// Re-export shared types and utilities
+export { type CompressOptions, hasCompressionStream };
 
 /**
  * Check if native zlib is available (always false in browser)
  */
 export function hasNativeZlib(): boolean {
   return false;
-}
-
-/**
- * Check if CompressionStream is available
- */
-export function hasCompressionStream(): boolean {
-  return typeof CompressionStream !== "undefined";
 }
 
 /**
@@ -50,7 +37,7 @@ export function hasCompressionStream(): boolean {
  */
 export async function compress(
   data: Uint8Array,
-  options: CompressOptions = {}
+  options: { level?: number } = {}
 ): Promise<Uint8Array> {
   const level = options.level ?? 6;
 
@@ -61,7 +48,7 @@ export async function compress(
 
   // Use CompressionStream
   if (typeof CompressionStream !== "undefined") {
-    return compressWithCompressionStream(data);
+    return compressWithStream(data);
   }
 
   // No compression available - return original data
@@ -77,50 +64,8 @@ export async function compress(
  * @param _options - Compression options
  * @throws Error always - sync compression not available in browser
  */
-export function compressSync(_data: Uint8Array, _options: CompressOptions = {}): Uint8Array {
+export function compressSync(_data: Uint8Array, _options: { level?: number } = {}): Uint8Array {
   throw new Error("Synchronous compression is not available in browser environment");
-}
-
-/**
- * Compress using browser's native CompressionStream
- * Uses "deflate-raw" format (required for ZIP files)
- *
- * @param data - Data to compress
- * @returns Compressed data
- */
-async function compressWithCompressionStream(data: Uint8Array): Promise<Uint8Array> {
-  const cs = new CompressionStream("deflate-raw");
-  const writer = cs.writable.getWriter();
-  const reader = cs.readable.getReader();
-
-  // Write data and close
-  writer.write(
-    new Uint8Array(data.buffer, data.byteOffset, data.byteLength) as unknown as BufferSource
-  );
-  writer.close();
-
-  // Read all compressed chunks
-  const chunks: Uint8Array[] = [];
-  let totalLength = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks.push(value);
-    totalLength += value.length;
-  }
-
-  // Combine chunks into single array
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  return result;
 }
 
 /**
@@ -132,7 +77,7 @@ async function compressWithCompressionStream(data: Uint8Array): Promise<Uint8Arr
 export async function decompress(data: Uint8Array): Promise<Uint8Array> {
   // Use DecompressionStream
   if (typeof DecompressionStream !== "undefined") {
-    return decompressWithDecompressionStream(data);
+    return decompressWithStream(data);
   }
 
   throw new Error("No native decompression available in browser");
@@ -147,45 +92,4 @@ export async function decompress(data: Uint8Array): Promise<Uint8Array> {
  */
 export function decompressSync(_data: Uint8Array): Uint8Array {
   throw new Error("Synchronous decompression is not available in browser environment");
-}
-
-/**
- * Decompress using browser's native DecompressionStream
- *
- * @param data - Compressed data (deflate-raw format)
- * @returns Decompressed data
- */
-async function decompressWithDecompressionStream(data: Uint8Array): Promise<Uint8Array> {
-  const ds = new DecompressionStream("deflate-raw");
-  const writer = ds.writable.getWriter();
-  const reader = ds.readable.getReader();
-
-  // Write data and close
-  writer.write(
-    new Uint8Array(data.buffer, data.byteOffset, data.byteLength) as unknown as BufferSource
-  );
-  writer.close();
-
-  // Read all decompressed chunks
-  const chunks: Uint8Array[] = [];
-  let totalLength = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks.push(value);
-    totalLength += value.length;
-  }
-
-  // Combine chunks into single array
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  return result;
 }

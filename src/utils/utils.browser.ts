@@ -1,77 +1,32 @@
 /**
- * Browser-compatible utility functions
- * This file contains utility functions that don't depend on Node.js modules
+ * Browser utility functions
+ * Re-exports shared utilities and adds browser-specific implementations
  */
 
-export function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// Re-export all shared utilities
+export {
+  delay,
+  nop,
+  inherits,
+  dateToExcel,
+  excelToDate,
+  toIsoDateString,
+  parsePath,
+  getRelsPath,
+  xmlDecode,
+  validInt,
+  isDateFmt,
+  parseBoolean,
+  range,
+  toSortedArray,
+  objectFromProps,
+  bufferToString
+} from "./utils.base.js";
 
-export function nop(): void {}
+// =============================================================================
+// XML encoding (Browser version with full Unicode support)
+// =============================================================================
 
-// useful stuff
-export const inherits = function <
-  T extends new (...args: any[]) => any,
-  S extends new (...args: any[]) => any
->(cls: T, superCtor: S, statics?: any, prototype?: any): void {
-  (cls as any).super_ = superCtor;
-
-  if (!prototype) {
-    prototype = statics;
-    statics = null;
-  }
-
-  if (statics) {
-    Object.keys(statics).forEach(i => {
-      Object.defineProperty(cls, i, Object.getOwnPropertyDescriptor(statics, i)!);
-    });
-  }
-
-  const properties: PropertyDescriptorMap = {
-    constructor: {
-      value: cls,
-      enumerable: false,
-      writable: false,
-      configurable: true
-    }
-  };
-  if (prototype) {
-    Object.keys(prototype).forEach(i => {
-      properties[i] = Object.getOwnPropertyDescriptor(prototype, i)!;
-    });
-  }
-
-  cls.prototype = Object.create(superCtor.prototype, properties);
-};
-
-interface PathInfo {
-  path: string;
-  name: string;
-}
-
-export function dateToExcel(d: Date, date1904?: boolean): number {
-  return 25569 + d.getTime() / (24 * 3600 * 1000) - (date1904 ? 1462 : 0);
-}
-
-export function excelToDate(v: number, date1904?: boolean): Date {
-  const millisecondSinceEpoch = Math.round((v - 25569 + (date1904 ? 1462 : 0)) * 24 * 3600 * 1000);
-  return new Date(millisecondSinceEpoch);
-}
-
-export function parsePath(filepath: string): PathInfo {
-  const last = filepath.lastIndexOf("/");
-  return {
-    path: filepath.substring(0, last),
-    name: filepath.substring(last + 1)
-  };
-}
-
-export function getRelsPath(filepath: string): string {
-  const path = parsePath(filepath);
-  return `${path.path}/_rels/${path.name}.rels`;
-}
-
-// Note: entities contains escapeXml which is used internally
 const xmlEncodingMap: Record<string, string> = {
   "<": "&lt;",
   ">": "&gt;",
@@ -96,108 +51,51 @@ export function xmlEncode(text: string): string {
   result = result.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\uFFFE\uFFFF]/g, char => {
     const code = char.charCodeAt(0);
     // For control characters, use numeric character reference
-    // This ensures they can be read back (though some XML parsers may reject them)
     return `&#x${code.toString(16).toUpperCase()};`;
   });
 
-  // Third pass: handle surrogate pairs and other special Unicode
-  // This handles characters outside the BMP that might cause issues
+  // Third pass: handle invalid surrogate pairs
   result = result.replace(
     /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
-    () => {
-      // Invalid surrogate - remove or replace
-      return "\uFFFD"; // replacement character
-    }
+    () => "\uFFFD" // replacement character
   );
 
   return result;
 }
 
-const xmlDecodingMap: Record<string, string> = {
-  lt: "<",
-  gt: ">",
-  amp: "&",
-  quot: '"',
-  apos: "'"
-};
+// =============================================================================
+// File system utilities (Browser stub - always returns false)
+// =============================================================================
 
-export function xmlDecode(text: string): string {
-  return text.replace(/&(#\d+|#x[0-9A-Fa-f]+|\w+);/g, (match: string, entity: string) => {
-    if (entity[0] === "#") {
-      // Numeric character reference
-      const code = entity[1] === "x" ? parseInt(entity.slice(2), 16) : parseInt(entity.slice(1));
-      return String.fromCodePoint(code);
-    }
-    return xmlDecodingMap[entity] || match;
-  });
-}
-
-export function validInt(value: string | number): number {
-  const i = typeof value === "number" ? value : parseInt(value, 10);
-  return Number.isNaN(i) ? 0 : i;
-}
-
-export function isDateFmt(fmt: string | null | undefined): boolean {
-  if (!fmt) {
-    return false;
-  }
-  // must not be a string fmt
-  if (fmt.indexOf("@") > -1) {
-    return false;
-  }
-  const result = fmt.match(/[ymdhMsb]+/) !== null;
-  return result;
-}
-
-// Browser version: fileExists always returns false since we don't have fs access
 export function fileExists(_path: string): Promise<boolean> {
   return Promise.resolve(false);
 }
 
-export function toIsoDateString(dt: Date): string {
-  return dt.toISOString().substr(0, 10);
-}
-
-export function parseBoolean(value: any): boolean {
-  return value === true || value === "true" || value === 1 || value === "1";
-}
-
-export function* range(start: number, stop: number, step: number = 1): Generator<number> {
-  for (let i = start; i < stop; i += step) {
-    yield i;
-  }
-}
-
-export function toSortedArray(values: Iterable<any>): any[] {
-  const arr = Array.from(values);
-  return arr.sort((a, b) => {
-    if (typeof a === "string" && typeof b === "string") {
-      return a.localeCompare(b);
-    }
-    if (a < b) {
-      return -1;
-    }
-    if (a > b) {
-      return 1;
-    }
-    return 0;
-  });
-}
-
-export function objectFromProps<T = any>(
-  props: string[],
-  obj: Record<string, T>
-): Record<string, T> {
-  const result: Record<string, T> = {};
-  props.forEach(prop => {
-    result[prop] = obj[prop];
-  });
-  return result;
-}
-
+// =============================================================================
 // Legacy export for backward compatibility
+// =============================================================================
 
+import {
+  nop,
+  inherits,
+  dateToExcel,
+  excelToDate,
+  parsePath,
+  getRelsPath,
+  xmlDecode,
+  validInt,
+  isDateFmt,
+  toIsoDateString,
+  parseBoolean,
+  range,
+  toSortedArray,
+  objectFromProps
+} from "./utils.base.js";
+
+/** @deprecated Import functions directly instead of using the utils object */
 export const utils = {
+  nop,
+  inherits,
   dateToExcel,
   excelToDate,
   parsePath,
@@ -206,19 +104,12 @@ export const utils = {
   xmlDecode,
   validInt,
   isDateFmt,
+  fs: {
+    exists: fileExists
+  },
   toIsoDateString,
-  parseBoolean
+  parseBoolean,
+  range,
+  toSortedArray,
+  objectFromProps
 };
-
-/**
- * Convert Uint8Array, ArrayBuffer, or string to string
- * Browser-compatible version using TextDecoder
- */
-export function bufferToString(buffer: Uint8Array | ArrayBuffer | string): string {
-  // If already a string, return as-is
-  if (typeof buffer === "string") {
-    return buffer;
-  }
-  const data = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
-  return new TextDecoder("utf-8").decode(data);
-}
