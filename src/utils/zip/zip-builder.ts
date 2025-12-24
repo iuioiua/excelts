@@ -22,8 +22,8 @@
  * └──────────────────────────┘
  */
 
-import { crc32 } from "./crc32.js";
-import { compress, compressSync, type CompressOptions } from "./compress.js";
+import { crc32 } from "./crc32";
+import { compress, compressSync, type CompressOptions } from "./compress";
 
 /**
  * ZIP file entry

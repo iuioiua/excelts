@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { testDataPath } from "../../utils/test-file-helper.js";
-import { Workbook } from "../../../index.js";
+import { testDataPath } from "../../utils/test-file-helper";
+import { Workbook } from "../../../index";
 
 describe("github issues", () => {
   describe("pull request 1487 - lastColumn with an empty column", () => {

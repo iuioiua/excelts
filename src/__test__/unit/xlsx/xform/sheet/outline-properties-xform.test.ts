@@ -1,6 +1,6 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { OutlinePropertiesXform } from "../../../../../xlsx/xform/sheet/outline-properties-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { OutlinePropertiesXform } from "../../../../../xlsx/xform/sheet/outline-properties-xform";
 
 const expectations = [
   {

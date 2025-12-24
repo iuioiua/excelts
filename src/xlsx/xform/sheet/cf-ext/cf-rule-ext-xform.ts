@@ -1,7 +1,7 @@
-import { BaseXform } from "../../base-xform.js";
-import { CompositeXform } from "../../composite-xform.js";
-import { DatabarExtXform } from "./databar-ext-xform.js";
-import { IconSetExtXform } from "./icon-set-ext-xform.js";
+import { BaseXform } from "../../base-xform";
+import { CompositeXform } from "../../composite-xform";
+import { DatabarExtXform } from "./databar-ext-xform";
+import { IconSetExtXform } from "./icon-set-ext-xform";
 
 const extIcons = {
   "3Triangles": true,

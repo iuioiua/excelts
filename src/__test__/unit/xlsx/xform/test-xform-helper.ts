@@ -1,11 +1,11 @@
 import { PassThrough } from "stream";
 import { expect } from "vitest";
 import { XMLParser } from "fast-xml-parser";
-import { CompyXform } from "./compy-xform.js";
-import { parseSax } from "../../../../utils/parse-sax.js";
-import { XmlStream } from "../../../../utils/xml-stream.js";
-import { BooleanXform } from "../../../../xlsx/xform/simple/boolean-xform.js";
-import { cloneDeep } from "../../../../utils/under-dash.js";
+import { CompyXform } from "./compy-xform";
+import { parseSax } from "../../../../utils/parse-sax";
+import { XmlStream } from "../../../../utils/xml-stream";
+import { BooleanXform } from "../../../../xlsx/xform/simple/boolean-xform";
+import { cloneDeep } from "../../../../utils/under-dash";
 
 // XML parser configuration for comparison
 const xmlParser = new XMLParser({

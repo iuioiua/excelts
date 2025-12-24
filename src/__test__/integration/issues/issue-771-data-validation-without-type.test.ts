@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
-import { testDataPath } from "../../utils/test-file-helper.js";
-import { Workbook } from "../../../index.js";
+import { testDataPath } from "../../utils/test-file-helper";
+import { Workbook } from "../../../index";
 
 describe("github issues", () => {
   it("issue 771 - Issue with dataValidation without type and with formula1 or formula2", () => {

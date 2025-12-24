@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { testUtils } from "../../utils/index.js";
-import { Workbook } from "../../../index.js";
-import { Enums } from "../../../doc/enums.js";
+import { testUtils } from "../../utils/index";
+import { Workbook } from "../../../index";
+import { Enums } from "../../../doc/enums";
 
 // =============================================================================
 // Helpers

@@ -1,5 +1,5 @@
-import { WorkbookWriter } from "../index.js";
-import { HrStopwatch } from "./utils/hr-stopwatch.js";
+import { WorkbookWriter } from "../index";
+import { HrStopwatch } from "./utils/hr-stopwatch";
 
 const [, , filename] = process.argv;
 

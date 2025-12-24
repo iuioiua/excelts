@@ -9,7 +9,7 @@ import {
   uint8ArrayToBase64,
   stringToUtf16Le,
   concatUint8Arrays
-} from "./browser-buffer.js";
+} from "./browser-buffer";
 
 // Helper to convert number to little-endian Uint8Array
 function uint32ToLe(num: number): Uint8Array {

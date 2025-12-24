@@ -1,5 +1,5 @@
-import { fix } from "./tools.js";
-import { ValueType } from "../../index.js";
+import { fix } from "./tools";
+import { ValueType } from "../../index";
 import testValuesJson from "./data/sheet-values.json" with { type: "json" };
 import stylesJson from "./data/styles.json" with { type: "json" };
 import propertiesJson from "./data/sheet-properties.json" with { type: "json" };

@@ -19,13 +19,13 @@
  */
 
 // Stream-based API (Node.js only - requires stream module)
-export { Parse, createParse, type ParseOptions, type ZipEntry } from "./parse.js";
-export { PullStream } from "./pull-stream.js";
-export { NoopStream } from "./noop-stream.js";
-export { bufferStream } from "./buffer-stream.js";
-export { parse as parseBuffer } from "./parse-buffer.js";
-export { parseDateTime } from "./parse-datetime.js";
-export { parseExtraField, type ExtraField, type ZipVars } from "./parse-extra-field.js";
+export { Parse, createParse, type ParseOptions, type ZipEntry } from "./parse";
+export { PullStream } from "./pull-stream";
+export { NoopStream } from "./noop-stream";
+export { bufferStream } from "./buffer-stream";
+export { parse as parseBuffer } from "./parse-buffer";
+export { parseDateTime } from "./parse-datetime";
+export { parseExtraField, type ExtraField, type ZipVars } from "./parse-extra-field";
 
 // Buffer-based API (Browser + Node.js - cross-platform)
 export {
@@ -37,4 +37,4 @@ export {
   type ExtractedFile,
   type ZipEntryInfo,
   type ZipParseOptions
-} from "./extract.js";
+} from "./extract";

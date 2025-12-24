@@ -1,4 +1,4 @@
-import type { Row } from "../../doc/row.js";
+import type { Row } from "../../doc/row";
 
 export class ColumnSum {
   private columns: number[];

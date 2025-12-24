@@ -1,4 +1,4 @@
-import { BaseXform } from "../base-xform.js";
+import { BaseXform } from "../base-xform";
 
 //   <t xml:space="preserve"> is </t>
 

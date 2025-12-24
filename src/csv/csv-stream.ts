@@ -14,8 +14,8 @@ import type {
   Row,
   RowTransformCallback,
   RowValidateCallback
-} from "./csv-core.js";
-import { isSyncTransform, isSyncValidate } from "./csv-core.js";
+} from "./csv-core";
+import { isSyncTransform, isSyncValidate } from "./csv-core";
 
 /**
  * Transform stream that parses CSV data row by row

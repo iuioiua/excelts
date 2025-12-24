@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
+import { Workbook } from "../../../index";
 // this file to contain integration tests created from github issues
-import { testFilePath } from "../../utils/test-file-helper.js";
+import { testFilePath } from "../../utils/test-file-helper";
 
 const TEST_XLSX_FILE_NAME = testFilePath("issue-703.test");
 

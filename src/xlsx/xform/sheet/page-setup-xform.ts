@@ -1,4 +1,4 @@
-import { BaseXform } from "../base-xform.js";
+import { BaseXform } from "../base-xform";
 
 function booleanToXml(model: boolean): string | undefined {
   return model ? "1" : undefined;

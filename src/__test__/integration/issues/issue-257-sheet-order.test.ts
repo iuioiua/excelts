@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
-import { testDataPath } from "../../utils/test-file-helper.js";
+import { Workbook } from "../../../index";
+import { testDataPath } from "../../utils/test-file-helper";
 
 describe("github issues", () => {
   it("257 - Sheet Order", () => {

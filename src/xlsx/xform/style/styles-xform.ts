@@ -1,14 +1,14 @@
-import { Enums } from "../../../doc/enums.js";
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { BaseXform } from "../base-xform.js";
-import { StaticXform } from "../static-xform.js";
-import { ListXform } from "../list-xform.js";
-import { FontXform } from "./font-xform.js";
-import { FillXform } from "./fill-xform.js";
-import { BorderXform } from "./border-xform.js";
-import { NumFmtXform } from "./numfmt-xform.js";
-import { StyleXform } from "./style-xform.js";
-import { DxfXform } from "./dxf-xform.js";
+import { Enums } from "../../../doc/enums";
+import { XmlStream } from "../../../utils/xml-stream";
+import { BaseXform } from "../base-xform";
+import { StaticXform } from "../static-xform";
+import { ListXform } from "../list-xform";
+import { FontXform } from "./font-xform";
+import { FillXform } from "./fill-xform";
+import { BorderXform } from "./border-xform";
+import { NumFmtXform } from "./numfmt-xform";
+import { StyleXform } from "./style-xform";
+import { DxfXform } from "./dxf-xform";
 
 // custom numfmt ids start here
 const NUMFMT_BASE = 164;

@@ -1,8 +1,8 @@
-import { fix } from "./tools.js";
+import { fix } from "./tools";
 import testValuesJson from "./data/sheet-values.json" with { type: "json" };
 const testValues = fix(testValuesJson);
-import { utils } from "../../utils/utils.js";
-import { WorkbookReader, ValueType } from "../../index.js";
+import { utils } from "../../utils/utils";
+import { WorkbookReader, ValueType } from "../../index";
 
 function fillFormula(f) {
   return Object.assign({ formula: undefined }, f);

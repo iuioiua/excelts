@@ -7,29 +7,29 @@
 // Main Classes (Browser-compatible)
 // =============================================================================
 
-export { Workbook } from "./doc/workbook.browser.js";
-export { Worksheet } from "./doc/worksheet.js";
-export { Row } from "./doc/row.js";
-export { Column } from "./doc/column.js";
-export { Cell } from "./doc/cell.js";
-export { Range } from "./doc/range.js";
-export { Image } from "./doc/image.js";
-export * from "./doc/anchor.js";
-export { Table } from "./doc/table.js";
-export { DataValidations } from "./doc/data-validations.js";
+export { Workbook } from "./doc/workbook.browser";
+export { Worksheet } from "./doc/worksheet";
+export { Row } from "./doc/row";
+export { Column } from "./doc/column";
+export { Cell } from "./doc/cell";
+export { Range } from "./doc/range";
+export { Image } from "./doc/image";
+export * from "./doc/anchor";
+export { Table } from "./doc/table";
+export { DataValidations } from "./doc/data-validations";
 
 // =============================================================================
 // Enums
 // =============================================================================
 
-export * from "./doc/enums.js";
+export * from "./doc/enums";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 // Export all type definitions from types.ts
-export * from "./types.js";
+export * from "./types";
 
 // Export pivot table types (type-only, no runtime dependency)
 export type {
@@ -41,18 +41,18 @@ export type {
   PivotTableSubtotal,
   ParsedCacheDefinition,
   ParsedCacheRecords
-} from "./doc/pivot-table.js";
+} from "./doc/pivot-table";
 
 // =============================================================================
 // Utilities
 // =============================================================================
 
-export * from "./utils/sheet-utils.js";
+export * from "./utils/sheet-utils";
 
 // =============================================================================
 // CSV support (using native RFC 4180 implementation)
 // =============================================================================
-export type { CsvReadOptions, CsvWriteOptions } from "./csv/csv.js";
+export type { CsvReadOptions, CsvWriteOptions } from "./csv/csv";
 
 // =============================================================================
 // NOTE: The following are NOT exported in browser build (Node.js only):

@@ -1,4 +1,4 @@
-import type { Address, Location } from "../types.js";
+import type { Address, Location } from "../types";
 
 const addressRegex = /^[A-Z]+\d+$/;
 

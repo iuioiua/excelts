@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import { promisify } from "util";
-import { testUtils } from "../../utils/index.js";
-import { Workbook, WorkbookWriter } from "../../../index.js";
-import { testFilePath } from "../../utils/test-file-helper.js";
+import { testUtils } from "../../utils/index";
+import { Workbook, WorkbookWriter } from "../../../index";
+import { testFilePath } from "../../utils/test-file-helper";
 
 const TEST_XLSX_FILE_NAME = testFilePath("wb-xlsx-writer.test");
 const IMAGE_FILENAME = `${__dirname}/../data/image.png`;

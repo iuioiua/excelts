@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { testUtils } from "../../utils/index.js";
-import { Workbook } from "../../../index.js";
+import { testUtils } from "../../utils/index";
+import { Workbook } from "../../../index";
 
 describe("Worksheet", () => {
   describe("Styles", () => {

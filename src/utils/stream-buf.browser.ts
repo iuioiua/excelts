@@ -1,4 +1,4 @@
-import { StringBuf } from "./string-buf.js";
+import { StringBuf } from "./string-buf";
 
 // =============================================================================
 // Data chunks - encapsulating incoming data

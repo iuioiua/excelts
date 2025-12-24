@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractAll, extractFile, listFiles, forEachEntry } from "../../../utils/unzip/extract.js";
+import { extractAll, extractFile, listFiles, forEachEntry } from "../../../utils/unzip/extract";
 import { readFileSync } from "fs";
 import { join } from "path";
 

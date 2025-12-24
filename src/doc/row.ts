@@ -1,8 +1,8 @@
-import { Enums } from "./enums.js";
-import { colCache } from "../utils/col-cache.js";
-import { Cell, type CellModel, type CellAddress } from "./cell.js";
-import type { Worksheet } from "./worksheet.js";
-import type { Column } from "./column.js";
+import { Enums } from "./enums";
+import { colCache } from "../utils/col-cache";
+import { Cell, type CellModel, type CellAddress } from "./cell";
+import type { Worksheet } from "./worksheet";
+import type { Column } from "./column";
 import type {
   Style,
   NumFmt,
@@ -14,7 +14,7 @@ import type {
   CellValue,
   RowValues,
   RowBreak
-} from "../types.js";
+} from "../types";
 
 // Internal interface for row dimensions
 interface RowDimensions {

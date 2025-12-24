@@ -1,5 +1,5 @@
-import { BaseXform } from "../base-xform.js";
-import { parseBoolean } from "../../../utils/utils.js";
+import { BaseXform } from "../base-xform";
+import { parseBoolean } from "../../../utils/utils";
 
 interface ColModel {
   min: number;

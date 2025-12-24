@@ -1,6 +1,6 @@
-import { BaseXform } from "../base-xform.js";
-import { parseBoolean } from "../../../utils/utils.js";
-import { ColorXform } from "./color-xform.js";
+import { BaseXform } from "../base-xform";
+import { parseBoolean } from "../../../utils/utils";
+import { ColorXform } from "./color-xform";
 
 interface EdgeModel {
   style?: string;

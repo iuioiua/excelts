@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseDateTime } from "../../../utils/unzip/parse-datetime.js";
+import { parseDateTime } from "../../../utils/unzip/parse-datetime";
 
 describe("parse-datetime", () => {
   describe("parseDateTime", () => {

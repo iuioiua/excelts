@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { Workbook } from "../../index.js";
+import { Workbook } from "../../index";
 
 // =============================================================================
 // This spec is based around a gold standard Excel workbook 'gold.xlsx'

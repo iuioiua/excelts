@@ -12,20 +12,20 @@
 
 import fs from "fs";
 import { type Readable, type Writable } from "stream";
-import { fileExists } from "../utils/utils.js";
+import { fileExists } from "../utils/utils";
 import {
   createDefaultValueMapper,
   createDefaultWriteMapper,
   type CsvReadOptions,
   type CsvWriteOptions
-} from "./csv.base.js";
+} from "./csv.base";
 import {
   CsvParserStream,
   CsvFormatterStream,
   type CsvFormatterStreamOptions
-} from "./csv-stream.js";
-import type { Workbook } from "../doc/workbook.js";
-import type { Worksheet } from "../doc/worksheet.js";
+} from "./csv-stream";
+import type { Workbook } from "../doc/workbook";
+import type { Worksheet } from "../doc/worksheet";
 
 /**
  * Extended read options for streaming
@@ -289,5 +289,5 @@ class CSV {
 }
 
 export { CSV };
-export type { CsvReadOptions, CsvWriteOptions } from "./csv.base.js";
-export { CsvParserStream, CsvFormatterStream } from "./csv-stream.js";
+export type { CsvReadOptions, CsvWriteOptions } from "./csv.base";
+export { CsvParserStream, CsvFormatterStream } from "./csv-stream";

@@ -1,4 +1,4 @@
-import { ValueType } from "../../doc/enums.js";
+import { ValueType } from "../../doc/enums";
 import { expect } from "vitest";
 
 export const splice = {

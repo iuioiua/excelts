@@ -10,8 +10,8 @@ import fs from "fs";
 import path from "path";
 import { Readable, Writable } from "stream";
 import { pipeline } from "stream/promises";
-import { CsvParserStream, CsvFormatterStream } from "../../../csv/csv-stream.js";
-import { Workbook } from "../../../doc/workbook.js";
+import { CsvParserStream, CsvFormatterStream } from "../../../csv/csv-stream";
+import { Workbook } from "../../../doc/workbook";
 
 // Test data directory
 const testDir = path.join(__dirname, "../../utils/test-data");

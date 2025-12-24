@@ -4,7 +4,7 @@
  *
  * WorkbookWriter writes data to disk incrementally, avoiding memory issues
  */
-import { WorkbookWriter } from "../index.js";
+import { WorkbookWriter } from "../index";
 
 async function main() {
   console.time("xlsx");

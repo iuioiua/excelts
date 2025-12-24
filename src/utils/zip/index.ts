@@ -16,7 +16,7 @@
  *
  * @example Basic usage
  * ```ts
- * import { createZip } from "./utils/zip/index.js";
+ * import { createZip } from "./utils/zip/index";
  *
  * const zipData = await createZip([
  *   { name: "hello.txt", data: new TextEncoder().encode("Hello!") },
@@ -29,7 +29,7 @@
  *
  * @example Streaming usage
  * ```ts
- * import { ZipBuilder } from "./utils/zip/index.js";
+ * import { ZipBuilder } from "./utils/zip/index";
  *
  * const builder = new ZipBuilder({ level: 1 });
  *
@@ -49,7 +49,7 @@
  */
 
 // CRC32 utilities
-export { crc32, crc32Update, crc32Finalize } from "./crc32.js";
+export { crc32, crc32Update, crc32Finalize } from "./crc32";
 
 // Compression utilities
 export {
@@ -60,7 +60,7 @@ export {
   hasNativeZlib,
   hasCompressionStream,
   type CompressOptions
-} from "./compress.js";
+} from "./compress";
 
 // ZIP builder
 export {
@@ -69,4 +69,4 @@ export {
   ZipBuilder,
   type ZipEntry,
   type ZipOptions
-} from "./zip-builder.js";
+} from "./zip-builder";

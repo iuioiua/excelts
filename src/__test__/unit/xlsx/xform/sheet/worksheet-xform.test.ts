@@ -2,12 +2,12 @@ import fs from "fs";
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { testXformHelper } from "../test-xform-helper.js";
-import { Enums } from "../../../../../doc/enums.js";
-import { XmlStream } from "../../../../../utils/xml-stream.js";
-import { WorkSheetXform } from "../../../../../xlsx/xform/sheet/worksheet-xform.js";
-import { SharedStringsXform } from "../../../../../xlsx/xform/strings/shared-strings-xform.js";
-import { StylesXform } from "../../../../../xlsx/xform/style/styles-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { Enums } from "../../../../../doc/enums";
+import { XmlStream } from "../../../../../utils/xml-stream";
+import { WorkSheetXform } from "../../../../../xlsx/xform/sheet/worksheet-xform";
+import { SharedStringsXform } from "../../../../../xlsx/xform/strings/shared-strings-xform";
+import { StylesXform } from "../../../../../xlsx/xform/style/styles-xform";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { SharedStringsXform } from "../../../../../xlsx/xform/strings/shared-strings-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { SharedStringsXform } from "../../../../../xlsx/xform/strings/shared-strings-xform";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

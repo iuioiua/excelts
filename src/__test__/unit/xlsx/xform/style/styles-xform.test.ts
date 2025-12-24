@@ -2,9 +2,9 @@ import fs from "fs";
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { testXformHelper, normalizeXml } from "../test-xform-helper.js";
-import { StylesXform } from "../../../../../xlsx/xform/style/styles-xform.js";
-import { XmlStream } from "../../../../../utils/xml-stream.js";
+import { testXformHelper, normalizeXml } from "../test-xform-helper";
+import { StylesXform } from "../../../../../xlsx/xform/style/styles-xform";
+import { XmlStream } from "../../../../../utils/xml-stream";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

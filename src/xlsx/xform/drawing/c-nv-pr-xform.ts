@@ -1,6 +1,6 @@
-import { BaseXform } from "../base-xform.js";
-import { HLinkClickXform } from "./hlink-click-xform.js";
-import { ExtLstXform } from "./ext-lst-xform.js";
+import { BaseXform } from "../base-xform";
+import { HLinkClickXform } from "./hlink-click-xform";
+import { ExtLstXform } from "./ext-lst-xform";
 
 interface CNvPrModel {
   index: number;

@@ -1,6 +1,6 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { DefinedNamesXform } from "../../../../../xlsx/xform/book/defined-name-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { DefinedNamesXform } from "../../../../../xlsx/xform/book/defined-name-xform";
 
 const expectations = [
   {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import path from "path";
-import { testUtils } from "../utils/index.js";
-import { ValueType, Workbook } from "../../index.js";
-import { Range } from "../../doc/range.js";
+import { testUtils } from "../utils/index";
+import { ValueType, Workbook } from "../../index";
+import { Range } from "../../doc/range";
 
 describe("Worksheet", () => {
   describe("Values", () => {

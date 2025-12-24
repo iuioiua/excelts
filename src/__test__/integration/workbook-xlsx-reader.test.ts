@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
 import fs from "fs";
-import { testUtils } from "../utils/index.js";
-import { ValueType, Workbook } from "../../index.js";
-import { testFilePath, testDataPath } from "../utils/test-file-helper.js";
+import { testUtils } from "../utils/index";
+import { ValueType, Workbook } from "../../index";
+import { testFilePath, testDataPath } from "../utils/test-file-helper";
 
 const TEST_FILE_NAME = testFilePath("wb-xlsx-reader.test");
 

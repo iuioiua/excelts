@@ -1,6 +1,6 @@
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { BaseXform } from "../base-xform.js";
-import { CommentXform } from "./comment-xform.js";
+import { XmlStream } from "../../../utils/xml-stream";
+import { BaseXform } from "../base-xform";
+import { CommentXform } from "./comment-xform";
 
 interface CommentsModel {
   comments: any[];

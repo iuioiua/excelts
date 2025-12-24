@@ -6,13 +6,13 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { Workbook } from "../../../doc/workbook.js";
+import { Workbook } from "../../../doc/workbook";
 import {
   parseCsvToWorksheet,
   formatWorksheetToCsv,
   createDefaultValueMapper,
   createDefaultWriteMapper
-} from "../../../csv/csv.base.js";
+} from "../../../csv/csv.base";
 
 describe("CSV Base - Worksheet Integration", () => {
   let workbook: Workbook;

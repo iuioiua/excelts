@@ -5,9 +5,9 @@
  * Platform-specific features (xlsx, csv, streaming) are added by subclasses.
  */
 
-import { Worksheet, type WorksheetModel } from "./worksheet.js";
-import { DefinedNames, type DefinedNameModel } from "./defined-names.js";
-import type { PivotTable } from "./pivot-table.js";
+import { Worksheet, type WorksheetModel } from "./worksheet";
+import { DefinedNames, type DefinedNameModel } from "./defined-names";
+import type { PivotTable } from "./pivot-table";
 import type {
   AddWorksheetOptions,
   CalculationProperties,
@@ -15,7 +15,7 @@ import type {
   WorkbookProperties,
   WorkbookView,
   Buffer as ExcelBuffer
-} from "../types.js";
+} from "../types";
 
 // =============================================================================
 // Internal Types

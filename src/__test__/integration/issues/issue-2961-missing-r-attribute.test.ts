@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
+import { Workbook } from "../../../index";
 import path from "path";
 import { fileURLToPath } from "url";
 

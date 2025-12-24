@@ -9,12 +9,12 @@
 import zlib from "zlib";
 import { PassThrough, Transform, pipeline } from "stream";
 import type { TransformCallback } from "stream";
-import { PullStream } from "./pull-stream.js";
-import { NoopStream } from "./noop-stream.js";
-import { bufferStream } from "./buffer-stream.js";
-import { parseExtraField, type ExtraField } from "./parse-extra-field.js";
-import { parseDateTime } from "./parse-datetime.js";
-import { parse as parseBuffer } from "./parse-buffer.js";
+import { PullStream } from "./pull-stream";
+import { NoopStream } from "./noop-stream";
+import { bufferStream } from "./buffer-stream";
+import { parseExtraField, type ExtraField } from "./parse-extra-field";
+import { parseDateTime } from "./parse-datetime";
+import { parse as parseBuffer } from "./parse-buffer";
 
 // Check if native zlib is available (Node.js environment)
 // In browser with polyfill, createInflateRaw may not exist or may not work properly

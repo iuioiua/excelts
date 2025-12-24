@@ -1,7 +1,7 @@
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { xmlEncode, xmlDecode } from "../../../utils/utils.js";
-import { BaseXform } from "../base-xform.js";
-import type { PivotTableSource } from "../../../doc/pivot-table.js";
+import { XmlStream } from "../../../utils/xml-stream";
+import { xmlEncode, xmlDecode } from "../../../utils/utils";
+import { BaseXform } from "../base-xform";
+import type { PivotTableSource } from "../../../doc/pivot-table";
 
 /**
  * Model for generating pivot cache records (with live source)

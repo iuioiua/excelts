@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parse } from "../../../utils/unzip/parse-buffer.js";
+import { parse } from "../../../utils/unzip/parse-buffer";
 
 // Test buffer from original unzipper tests
 const buf = Buffer.from([

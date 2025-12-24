@@ -1,4 +1,4 @@
-import { SharedStringsXform } from "../xlsx/xform/strings/shared-strings-xform.js";
+import { SharedStringsXform } from "../xlsx/xform/strings/shared-strings-xform";
 
 const filename = process.argv[2];
 

@@ -21,7 +21,7 @@ export {
   toSortedArray,
   objectFromProps,
   bufferToString
-} from "./utils.base.js";
+} from "./utils.base";
 
 // =============================================================================
 // XML encoding (Browser version with full Unicode support)
@@ -90,7 +90,7 @@ import {
   range,
   toSortedArray,
   objectFromProps
-} from "./utils.base.js";
+} from "./utils.base";
 
 /** @deprecated Import functions directly instead of using the utils object */
 export const utils = {

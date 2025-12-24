@@ -1,5 +1,5 @@
-import { CompositeXform } from "../../composite-xform.js";
-import { FExtXform } from "./f-ext-xform.js";
+import { CompositeXform } from "../../composite-xform";
+import { FExtXform } from "./f-ext-xform";
 
 class CfvoExtXform extends CompositeXform {
   fExtXform: FExtXform;

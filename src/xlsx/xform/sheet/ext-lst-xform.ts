@@ -1,5 +1,5 @@
-import { CompositeXform } from "../composite-xform.js";
-import { ConditionalFormattingsExtXform } from "./cf-ext/conditional-formattings-ext-xform.js";
+import { CompositeXform } from "../composite-xform";
+import { ConditionalFormattingsExtXform } from "./cf-ext/conditional-formattings-ext-xform";
 
 class ExtXform extends CompositeXform {
   declare public map: { [key: string]: any };

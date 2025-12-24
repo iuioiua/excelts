@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { utils } from "../../../utils/utils.js";
+import { utils } from "../../../utils/utils";
 
 describe("utils", () => {
   describe("xmlEncode", () => {

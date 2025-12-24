@@ -1,5 +1,5 @@
 import { SaxesParser } from "saxes";
-import { bufferToString } from "./utils.js";
+import { bufferToString } from "./utils";
 
 interface SaxEvent {
   eventType: "opentag" | "text" | "closetag";

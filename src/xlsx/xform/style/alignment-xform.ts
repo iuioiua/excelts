@@ -1,5 +1,5 @@
-import { BaseXform } from "../base-xform.js";
-import { validInt, parseBoolean } from "../../../utils/utils.js";
+import { BaseXform } from "../base-xform";
+import { validInt, parseBoolean } from "../../../utils/utils";
 
 const Enums = {
   ReadingOrder: {

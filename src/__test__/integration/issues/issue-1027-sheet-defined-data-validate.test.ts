@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
-import { Workbook } from "../../../index.js";
-import { testFilePath } from "../../utils/test-file-helper.js";
+import { Workbook } from "../../../index";
+import { testFilePath } from "../../utils/test-file-helper";
 
 const TEST_XLSX_FILE_NAME = testFilePath("issue-1027.test");
 

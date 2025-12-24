@@ -1,6 +1,6 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { BooleanXform } from "../../../../../xlsx/xform/simple/boolean-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { BooleanXform } from "../../../../../xlsx/xform/simple/boolean-xform";
 
 const expectations = [
   {

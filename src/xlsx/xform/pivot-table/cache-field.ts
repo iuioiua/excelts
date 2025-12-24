@@ -1,4 +1,4 @@
-import { xmlEncode } from "../../../utils/utils.js";
+import { xmlEncode } from "../../../utils/utils";
 
 interface CacheFieldConfig {
   name: string;

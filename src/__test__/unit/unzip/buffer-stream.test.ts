@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bufferStream } from "../../../utils/unzip/buffer-stream.js";
+import { bufferStream } from "../../../utils/unzip/buffer-stream";
 import { Readable } from "stream";
 
 describe("buffer-stream", () => {

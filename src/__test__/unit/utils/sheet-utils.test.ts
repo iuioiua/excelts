@@ -18,7 +18,7 @@ import {
   bookNew,
   bookAppendSheet,
   utils
-} from "../../../utils/sheet-utils.js";
+} from "../../../utils/sheet-utils";
 
 describe("sheet-utils", () => {
   // ===========================================================================

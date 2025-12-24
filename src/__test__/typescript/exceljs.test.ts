@@ -1,4 +1,4 @@
-import { Workbook } from "../../index.js";
+import { Workbook } from "../../index";
 
 describe("typescript", () => {
   it("can create and buffer xlsx", async () => {

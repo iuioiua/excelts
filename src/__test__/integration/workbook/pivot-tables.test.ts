@@ -6,7 +6,7 @@ const fsReadFileAsync = promisify(fs.readFile);
 
 import { unzipSync } from "fflate";
 
-import { Workbook } from "../../../index.js";
+import { Workbook } from "../../../index";
 
 const PIVOT_TABLE_FILEPATHS = [
   "xl/pivotCache/pivotCacheRecords1.xml",
@@ -16,7 +16,7 @@ const PIVOT_TABLE_FILEPATHS = [
   "xl/pivotTables/_rels/pivotTable1.xml.rels"
 ];
 
-import { testFilePath } from "../../utils/test-file-helper.js";
+import { testFilePath } from "../../utils/test-file-helper";
 
 const TEST_XLSX_FILEPATH = testFilePath("workbook-pivot.test");
 const TEST_XLSX_TABLE_FILEPATH = testFilePath("workbook-pivot-table.test");

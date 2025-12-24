@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Workbook, WorkbookWriter } from "../../../index.js";
+import { Workbook, WorkbookWriter } from "../../../index";
 
 describe("github issues", () => {
   it("pull request 1262 - protect should work with streaming workbook writer", async () => {

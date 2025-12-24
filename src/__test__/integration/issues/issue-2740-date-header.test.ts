@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { Workbook } from "../../../index.js";
+import { Workbook } from "../../../index";
 
 // Issue 2740: Unable to format a column header definition to be a date format
 // The column header should support Date type values, not just strings

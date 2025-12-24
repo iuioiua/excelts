@@ -8,7 +8,7 @@
 import { deflateRawSync, inflateRawSync } from "zlib";
 
 // Re-export shared types and utilities
-export { type CompressOptions, hasCompressionStream } from "./compress.base.js";
+export { type CompressOptions, hasCompressionStream } from "./compress.base";
 
 /**
  * Check if native zlib is available (always true in Node.js)

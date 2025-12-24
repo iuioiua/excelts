@@ -6,7 +6,7 @@
  * scientific notation, fractions, elapsed time, and more
  */
 
-import { excelToDate } from "./utils.js";
+import { excelToDate } from "./utils";
 
 // =============================================================================
 // Built-in Format Table (Excel numFmtId to format string mapping)

@@ -1,4 +1,4 @@
-import { WorkbookWriter } from "../index.js";
+import { WorkbookWriter } from "../index";
 
 const filename = process.argv[2];
 console.log(filename);

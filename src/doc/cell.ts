@@ -1,12 +1,12 @@
-import { colCache } from "../utils/col-cache.js";
-import { Enums } from "./enums.js";
-import { Note } from "./note.js";
-import { escapeHtml } from "../utils/under-dash.js";
-import { slideFormula } from "../utils/shared-formula.js";
-import type { Row } from "./row.js";
-import type { Column } from "./column.js";
-import type { Worksheet } from "./worksheet.js";
-import type { Workbook } from "./workbook.js";
+import { colCache } from "../utils/col-cache";
+import { Enums } from "./enums";
+import { Note } from "./note";
+import { escapeHtml } from "../utils/under-dash";
+import { slideFormula } from "../utils/shared-formula";
+import type { Row } from "./row";
+import type { Column } from "./column";
+import type { Worksheet } from "./worksheet";
+import type { Workbook } from "./workbook";
 import type {
   Style,
   NumFmt,
@@ -20,8 +20,8 @@ import type {
   DataValidation,
   CellValue,
   CellHyperlinkValue
-} from "../types.js";
-import type { DataValidations } from "./data-validations.js";
+} from "../types";
+import type { DataValidations } from "./data-validations";
 
 // Alias for backward compatibility
 export type HyperlinkValueData = CellHyperlinkValue;

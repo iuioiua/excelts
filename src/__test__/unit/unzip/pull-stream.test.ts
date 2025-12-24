@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PullStream } from "../../../utils/unzip/pull-stream.js";
+import { PullStream } from "../../../utils/unzip/pull-stream";
 import { Readable } from "stream";
 
 describe("pull-stream", () => {

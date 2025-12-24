@@ -1,9 +1,9 @@
-import { ColorXform } from "./color-xform.js";
-import { BooleanXform } from "../simple/boolean-xform.js";
-import { IntegerXform } from "../simple/integer-xform.js";
-import { StringXform } from "../simple/string-xform.js";
-import { UnderlineXform } from "./underline-xform.js";
-import { BaseXform } from "../base-xform.js";
+import { ColorXform } from "./color-xform";
+import { BooleanXform } from "../simple/boolean-xform";
+import { IntegerXform } from "../simple/integer-xform";
+import { StringXform } from "../simple/string-xform";
+import { UnderlineXform } from "./underline-xform";
+import { BaseXform } from "../base-xform";
 
 interface FontModel {
   bold?: boolean;

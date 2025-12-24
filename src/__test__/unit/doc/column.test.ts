@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { testUtils } from "../../utils/index.js";
-import { Column } from "../../../doc/column.js";
+import { testUtils } from "../../utils/index";
+import { Column } from "../../../doc/column";
 
 describe("Column", () => {
   it("creates by defn", () => {

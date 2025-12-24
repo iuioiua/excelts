@@ -1,4 +1,4 @@
-import { colCache } from "./col-cache.js";
+import { colCache } from "./col-cache";
 
 // Helper to check for prototype pollution
 function isSafeKey(key: string | number): boolean {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
-import { testFilePath } from "../../utils/test-file-helper.js";
+import { Workbook } from "../../../index";
+import { testFilePath } from "../../utils/test-file-helper";
 
 const TEST_CSV_FILE_NAME = testFilePath("issue-995-encoding.test", ".csv");
 const HEBREW_TEST_STRING = "משהו שכתוב בעברית";

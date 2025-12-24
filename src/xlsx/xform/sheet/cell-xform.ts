@@ -1,8 +1,8 @@
-import { dateToExcel, xmlDecode, isDateFmt, excelToDate } from "../../../utils/utils.js";
-import { BaseXform } from "../base-xform.js";
-import { Range } from "../../../doc/range.js";
-import { Enums } from "../../../doc/enums.js";
-import { RichTextXform } from "../strings/rich-text-xform.js";
+import { dateToExcel, xmlDecode, isDateFmt, excelToDate } from "../../../utils/utils";
+import { BaseXform } from "../base-xform";
+import { Range } from "../../../doc/range";
+import { Enums } from "../../../doc/enums";
+import { RichTextXform } from "../strings/rich-text-xform";
 
 function getValueType(v) {
   if (v === null || v === undefined) {

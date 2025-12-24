@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { crc32, crc32Update, crc32Finalize } from "../../../utils/zip/crc32.js";
+import { crc32, crc32Update, crc32Finalize } from "../../../utils/zip/crc32";
 
 describe("crc32", () => {
   describe("basic crc32 calculation", () => {

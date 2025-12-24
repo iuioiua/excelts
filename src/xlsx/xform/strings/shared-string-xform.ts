@@ -1,7 +1,7 @@
-import { TextXform } from "./text-xform.js";
-import { RichTextXform } from "./rich-text-xform.js";
-import { PhoneticTextXform } from "./phonetic-text-xform.js";
-import { BaseXform } from "../base-xform.js";
+import { TextXform } from "./text-xform";
+import { RichTextXform } from "./rich-text-xform";
+import { PhoneticTextXform } from "./phonetic-text-xform";
+import { BaseXform } from "../base-xform";
 
 // <si>
 //   <r></r><r></r>...

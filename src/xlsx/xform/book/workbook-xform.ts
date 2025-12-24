@@ -1,14 +1,14 @@
-import { colCache } from "../../../utils/col-cache.js";
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { BaseXform } from "../base-xform.js";
-import { StaticXform } from "../static-xform.js";
-import { ListXform } from "../list-xform.js";
-import { DefinedNamesXform } from "./defined-name-xform.js";
-import { WorksheetXform } from "./sheet-xform.js";
-import { WorkbookViewXform } from "./workbook-view-xform.js";
-import { WorkbookPropertiesXform } from "./workbook-properties-xform.js";
-import { WorkbookCalcPropertiesXform } from "./workbook-calc-properties-xform.js";
-import { WorkbookPivotCacheXform } from "./workbook-pivot-cache-xform.js";
+import { colCache } from "../../../utils/col-cache";
+import { XmlStream } from "../../../utils/xml-stream";
+import { BaseXform } from "../base-xform";
+import { StaticXform } from "../static-xform";
+import { ListXform } from "../list-xform";
+import { DefinedNamesXform } from "./defined-name-xform";
+import { WorksheetXform } from "./sheet-xform";
+import { WorkbookViewXform } from "./workbook-view-xform";
+import { WorkbookPropertiesXform } from "./workbook-properties-xform";
+import { WorkbookCalcPropertiesXform } from "./workbook-calc-properties-xform";
+import { WorkbookPivotCacheXform } from "./workbook-pivot-cache-xform";
 
 class WorkbookXform extends BaseXform {
   declare public parser: any;

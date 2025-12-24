@@ -1,6 +1,6 @@
 import path from "path";
-import { Workbook } from "../index.js";
-import { HrStopwatch } from "./utils/hr-stopwatch.js";
+import { Workbook } from "../index";
+import { HrStopwatch } from "./utils/hr-stopwatch";
 
 const filename = process.argv[2];
 

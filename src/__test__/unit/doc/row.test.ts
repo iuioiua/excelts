@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { testUtils } from "../../utils/index.js";
-import { Enums } from "../../../doc/enums.js";
+import { testUtils } from "../../utils/index";
+import { Enums } from "../../../doc/enums";
 
 describe("Row", () => {
   it("stores cells", () => {

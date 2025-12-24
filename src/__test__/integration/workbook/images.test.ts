@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import { promisify } from "util";
-import { Workbook } from "../../../index.js";
+import { Workbook } from "../../../index";
 
 const IMAGE_FILENAME = `${__dirname}/../data/image.png`;
-import { testFilePath } from "../../utils/test-file-helper.js";
+import { testFilePath } from "../../utils/test-file-helper";
 
 const TEST_XLSX_FILE_NAME = testFilePath("workbook-images.test");
 const fsReadFileAsync = promisify(fs.readFile);

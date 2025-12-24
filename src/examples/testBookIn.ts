@@ -1,6 +1,6 @@
-import { isEqual } from "../utils/under-dash.js";
-import { HrStopwatch } from "./utils/hr-stopwatch.js";
-import { Workbook } from "../index.js";
+import { isEqual } from "../utils/under-dash";
+import { HrStopwatch } from "./utils/hr-stopwatch";
+import { Workbook } from "../index";
 
 const filename = process.argv[2];
 

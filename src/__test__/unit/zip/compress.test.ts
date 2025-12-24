@@ -6,7 +6,7 @@ import {
   decompressSync,
   hasNativeZlib,
   hasCompressionStream
-} from "../../../utils/zip/compress.js";
+} from "../../../utils/zip/compress";
 
 describe("compress", () => {
   describe("environment detection", () => {

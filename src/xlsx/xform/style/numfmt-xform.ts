@@ -1,5 +1,5 @@
-import { defaultNumFormats } from "../../defaultnumformats.js";
-import { BaseXform } from "../base-xform.js";
+import { defaultNumFormats } from "../../defaultnumformats";
+import { BaseXform } from "../base-xform";
 
 interface NumFmtModel {
   id: number;

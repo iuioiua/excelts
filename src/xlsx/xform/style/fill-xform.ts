@@ -1,5 +1,5 @@
-import { BaseXform } from "../base-xform.js";
-import { ColorXform } from "./color-xform.js";
+import { BaseXform } from "../base-xform";
+import { ColorXform } from "./color-xform";
 
 interface StopModel {
   position: number;

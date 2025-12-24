@@ -1,6 +1,6 @@
-import { range, toSortedArray } from "../utils/utils.js";
-import { colCache } from "../utils/col-cache.js";
-import type { Table } from "./table.js";
+import { range, toSortedArray } from "../utils/utils";
+import { colCache } from "../utils/col-cache";
+import type { Table } from "./table";
 
 /**
  * Interface representing the source data abstraction for pivot tables.

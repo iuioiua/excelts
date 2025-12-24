@@ -1,6 +1,6 @@
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { BaseXform } from "../base-xform.js";
-import { VmlShapeXform } from "./vml-shape-xform.js";
+import { XmlStream } from "../../../utils/xml-stream";
+import { BaseXform } from "../base-xform";
+import { VmlShapeXform } from "./vml-shape-xform";
 
 interface VmlNotesModel {
   comments: any[];

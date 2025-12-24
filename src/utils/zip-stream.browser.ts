@@ -1,5 +1,5 @@
-import { ZipBuilder } from "./zip/zip-builder.js";
-import { StreamBuf } from "./stream-buf.browser.js";
+import { ZipBuilder } from "./zip/zip-builder";
+import { StreamBuf } from "./stream-buf.browser";
 
 interface ZipWriterOptions {
   /** Compression method: "DEFLATE" (default) or "STORE" (no compression) */

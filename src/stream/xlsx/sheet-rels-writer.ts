@@ -1,5 +1,5 @@
-import { xmlEncode } from "../../utils/utils.js";
-import { RelType } from "../../xlsx/rel-type.js";
+import { xmlEncode } from "../../utils/utils";
+import { RelType } from "../../xlsx/rel-type";
 
 interface Hyperlink {
   address: string;

@@ -1,6 +1,6 @@
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { xmlEncode, xmlDecode } from "../../../utils/utils.js";
-import { BaseXform } from "../base-xform.js";
+import { XmlStream } from "../../../utils/xml-stream";
+import { xmlEncode, xmlDecode } from "../../../utils/utils";
+import { BaseXform } from "../base-xform";
 
 /**
  * Model for generating pivot table (with live source)

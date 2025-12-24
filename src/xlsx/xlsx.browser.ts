@@ -12,11 +12,11 @@
 
 import type { UnzipFile } from "fflate";
 import { Unzip, UnzipInflate } from "fflate";
-import { ZipWriter } from "../utils/zip-stream.browser.js";
-import { StreamBuf } from "../utils/stream-buf.browser.js";
-import { bufferToString } from "../utils/utils.js";
-import { base64ToUint8Array, BrowserBuffer } from "../utils/browser-buffer.js";
-import { XLSXBase, type IStreamBuf, type IParseStream } from "./xlsx.base.js";
+import { ZipWriter } from "../utils/zip-stream.browser";
+import { StreamBuf } from "../utils/stream-buf.browser";
+import { bufferToString } from "../utils/utils";
+import { base64ToUint8Array, BrowserBuffer } from "../utils/browser-buffer";
+import { XLSXBase, type IStreamBuf, type IParseStream } from "./xlsx.base";
 
 /**
  * Simple stream-like wrapper for parsing - implements async iterable

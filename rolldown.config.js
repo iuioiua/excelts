@@ -28,19 +28,19 @@ const createAnalyzePlugin = (filename, open = false) =>
 const srcPath = path.resolve("./src");
 const browserAlias = {
   // Core modules with platform-specific implementations
-  [path.join(srcPath, "doc/workbook.js")]: path.join(srcPath, "doc/workbook.browser.ts"),
-  [path.join(srcPath, "xlsx/xlsx.js")]: path.join(srcPath, "xlsx/xlsx.browser.ts"),
-  [path.join(srcPath, "csv/csv.js")]: path.join(srcPath, "csv/csv.browser.ts"),
+  [path.join(srcPath, "doc/workbook")]: path.join(srcPath, "doc/workbook.browser.ts"),
+  [path.join(srcPath, "xlsx/xlsx")]: path.join(srcPath, "xlsx/xlsx.browser.ts"),
+  [path.join(srcPath, "csv/csv")]: path.join(srcPath, "csv/csv.browser.ts"),
 
   // Utility modules - browser versions use Web APIs instead of Node.js APIs
-  [path.join(srcPath, "utils/stream-buf.js")]: path.join(srcPath, "utils/stream-buf.browser.ts"),
-  [path.join(srcPath, "utils/zip-stream.js")]: path.join(srcPath, "utils/zip-stream.browser.ts"),
-  [path.join(srcPath, "utils/encryptor.js")]: path.join(srcPath, "utils/encryptor.browser.ts"),
-  [path.join(srcPath, "utils/utils.js")]: path.join(srcPath, "utils/utils.browser.ts"),
+  [path.join(srcPath, "utils/stream-buf")]: path.join(srcPath, "utils/stream-buf.browser.ts"),
+  [path.join(srcPath, "utils/zip-stream")]: path.join(srcPath, "utils/zip-stream.browser.ts"),
+  [path.join(srcPath, "utils/encryptor")]: path.join(srcPath, "utils/encryptor.browser.ts"),
+  [path.join(srcPath, "utils/utils")]: path.join(srcPath, "utils/utils.browser.ts"),
 
   // ZIP utilities - browser versions use CompressionStream instead of Node.js zlib
-  [path.join(srcPath, "utils/zip/crc32.js")]: path.join(srcPath, "utils/zip/crc32.browser.ts"),
-  [path.join(srcPath, "utils/zip/compress.js")]: path.join(srcPath, "utils/zip/compress.browser.ts")
+  [path.join(srcPath, "utils/zip/crc32")]: path.join(srcPath, "utils/zip/crc32.browser.ts"),
+  [path.join(srcPath, "utils/zip/compress")]: path.join(srcPath, "utils/zip/compress.browser.ts")
 };
 
 // Common config shared by both builds

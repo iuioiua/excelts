@@ -1,11 +1,11 @@
-import { fix } from "./tools.js";
-import { Row } from "../../doc/row.js";
-import { Column } from "../../doc/column.js";
-import { testWorkbookReader } from "./test-workbook-reader.js";
-import { dataValidations } from "./test-data-validation-sheet.js";
-import { conditionalFormatting } from "./test-conditional-formatting-sheet.js";
-import { values } from "./test-values-sheet.js";
-import { splice } from "./test-spliced-sheet.js";
+import { fix } from "./tools";
+import { Row } from "../../doc/row";
+import { Column } from "../../doc/column";
+import { testWorkbookReader } from "./test-workbook-reader";
+import { dataValidations } from "./test-data-validation-sheet";
+import { conditionalFormatting } from "./test-conditional-formatting-sheet";
+import { values } from "./test-values-sheet";
+import { splice } from "./test-spliced-sheet";
 import views from "./data/views.json" with { type: "json" };
 import testValues from "./data/sheet-values.json" with { type: "json" };
 import styles from "./data/styles.json" with { type: "json" };
@@ -14,7 +14,7 @@ import pageSetup from "./data/page-setup.json" with { type: "json" };
 import conditionalFormattingData from "./data/conditional-formatting.json" with { type: "json" };
 import headerFooter from "./data/header-footer.json" with { type: "json" };
 import { expect } from "vitest";
-import { get } from "../../utils/under-dash.js";
+import { get } from "../../utils/under-dash";
 
 const testSheets = {
   dataValidations,

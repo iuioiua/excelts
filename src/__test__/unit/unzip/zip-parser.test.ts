@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ZipParser, parseZipEntries, extractEntryData } from "../../../utils/unzip/zip-parser.js";
-import { createZip, type ZipEntry } from "../../../utils/zip/zip-builder.js";
+import { ZipParser, parseZipEntries, extractEntryData } from "../../../utils/unzip/zip-parser";
+import { createZip, type ZipEntry } from "../../../utils/zip/zip-builder";
 
 // Helper to convert object to ZipEntry array
 function toEntries(files: Record<string, Uint8Array>): ZipEntry[] {

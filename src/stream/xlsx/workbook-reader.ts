@@ -3,15 +3,15 @@ import { EventEmitter } from "events";
 import { PassThrough, Readable } from "stream";
 import os from "os";
 import { join } from "path";
-import { iterateStream } from "../../utils/iterate-stream.js";
-import { parseSax } from "../../utils/parse-sax.js";
-import { StylesXform } from "../../xlsx/xform/style/styles-xform.js";
-import { WorkbookXform } from "../../xlsx/xform/book/workbook-xform.js";
-import { RelationshipsXform } from "../../xlsx/xform/core/relationships-xform.js";
-import { WorksheetReader } from "./worksheet-reader.js";
-import { HyperlinkReader } from "./hyperlink-reader.js";
-import { createParse } from "../../utils/unzip/parse.js";
-import type { WorksheetState, Font, WorkbookProperties } from "../../types.js";
+import { iterateStream } from "../../utils/iterate-stream";
+import { parseSax } from "../../utils/parse-sax";
+import { StylesXform } from "../../xlsx/xform/style/styles-xform";
+import { WorkbookXform } from "../../xlsx/xform/book/workbook-xform";
+import { RelationshipsXform } from "../../xlsx/xform/core/relationships-xform";
+import { WorksheetReader } from "./worksheet-reader";
+import { HyperlinkReader } from "./hyperlink-reader";
+import { createParse } from "../../utils/unzip/parse";
+import type { WorksheetState, Font, WorkbookProperties } from "../../types";
 
 // ============================================================================
 // Internal Types

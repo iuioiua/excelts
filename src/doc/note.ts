@@ -1,4 +1,4 @@
-import { deepMerge } from "../utils/under-dash.js";
+import { deepMerge } from "../utils/under-dash";
 
 interface NoteText {
   text: string;

@@ -4,7 +4,7 @@
  * Works in both Node.js and browser environments
  */
 
-import { ZipParser, type ZipEntryInfo } from "./zip-parser.js";
+import { ZipParser, type ZipEntryInfo } from "./zip-parser";
 
 /**
  * Extracted file entry
@@ -28,7 +28,7 @@ export interface ExtractedFile {
  *
  * @example
  * ```ts
- * import { extractAll } from "./utils/unzip/extract.js";
+ * import { extractAll } from "./utils/unzip/extract";
  *
  * const zipData = fs.readFileSync("archive.zip");
  * const files = await extractAll(zipData);
@@ -66,7 +66,7 @@ export async function extractAll(
  *
  * @example
  * ```ts
- * import { extractFile } from "./utils/unzip/extract.js";
+ * import { extractFile } from "./utils/unzip/extract";
  *
  * const zipData = fs.readFileSync("archive.zip");
  * const content = await extractFile(zipData, "readme.txt");
@@ -91,7 +91,7 @@ export async function extractFile(
  *
  * @example
  * ```ts
- * import { listFiles } from "./utils/unzip/extract.js";
+ * import { listFiles } from "./utils/unzip/extract";
  *
  * const zipData = fs.readFileSync("archive.zip");
  * const paths = await listFiles(zipData);
@@ -111,7 +111,7 @@ export async function listFiles(zipData: Uint8Array | ArrayBuffer): Promise<stri
  *
  * @example
  * ```ts
- * import { forEachEntry } from "./utils/unzip/extract.js";
+ * import { forEachEntry } from "./utils/unzip/extract";
  *
  * await forEachEntry(zipData, async (path, getData) => {
  *   if (path.endsWith(".xml")) {
@@ -137,4 +137,4 @@ export async function forEachEntry(
 }
 
 // Re-export ZipParser for advanced usage
-export { ZipParser, type ZipEntryInfo, type ZipParseOptions } from "./zip-parser.js";
+export { ZipParser, type ZipEntryInfo, type ZipParseOptions } from "./zip-parser";

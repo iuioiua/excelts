@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { XmlStream } from "../../../utils/xml-stream.js";
+import { XmlStream } from "../../../utils/xml-stream";
 
 describe("XmlStream", () => {
   it("Writes simple XML doc", () => {

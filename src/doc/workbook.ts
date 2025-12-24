@@ -7,11 +7,11 @@
  * - streaming: createStreamWriter/createStreamReader for large files
  */
 
-import { WorkbookBase } from "./workbook.base.js";
-import { XLSX } from "../xlsx/xlsx.js";
-import { CSV } from "../csv/csv.js";
-import { WorkbookWriter, type WorkbookWriterOptions } from "../stream/xlsx/workbook-writer.js";
-import { WorkbookReader, type WorkbookReaderOptions } from "../stream/xlsx/workbook-reader.js";
+import { WorkbookBase } from "./workbook.base";
+import { XLSX } from "../xlsx/xlsx";
+import { CSV } from "../csv/csv";
+import { WorkbookWriter, type WorkbookWriterOptions } from "../stream/xlsx/workbook-writer";
+import { WorkbookReader, type WorkbookReaderOptions } from "../stream/xlsx/workbook-reader";
 import type { Readable } from "stream";
 
 class Workbook extends WorkbookBase {

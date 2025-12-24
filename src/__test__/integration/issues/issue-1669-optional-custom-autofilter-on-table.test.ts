@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
-import { testDataPath } from "../../utils/test-file-helper.js";
-import { Workbook } from "../../../index.js";
+import { testDataPath } from "../../utils/test-file-helper";
+import { Workbook } from "../../../index";
 
 describe("github issues", () => {
   it("issue 1669 - optional autofilter and custom autofilter on tables", async () => {

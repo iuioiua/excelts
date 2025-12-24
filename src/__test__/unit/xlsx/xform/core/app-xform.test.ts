@@ -2,8 +2,8 @@ import { describe } from "vitest";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { testXformHelper } from "../test-xform-helper.js";
-import { AppXform } from "../../../../../xlsx/xform/core/app-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { AppXform } from "../../../../../xlsx/xform/core/app-xform";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

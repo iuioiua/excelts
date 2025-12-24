@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
-import { parseSax } from "../../utils/parse-sax.js";
-import { Enums } from "../../doc/enums.js";
-import { RelType } from "../../xlsx/rel-type.js";
-import type { WorkbookReader, InternalWorksheetOptions } from "./workbook-reader.js";
+import { parseSax } from "../../utils/parse-sax";
+import { Enums } from "../../doc/enums";
+import { RelType } from "../../xlsx/rel-type";
+import type { WorkbookReader, InternalWorksheetOptions } from "./workbook-reader";
 
 export interface HyperlinkReaderOptions {
   workbook: WorkbookReader;

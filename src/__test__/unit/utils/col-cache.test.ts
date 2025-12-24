@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { colCache } from "../../../utils/col-cache.js";
+import { colCache } from "../../../utils/col-cache";
 
 describe("colCache", () => {
   it("caches values", () => {

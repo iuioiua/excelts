@@ -1,4 +1,4 @@
-import { colCache } from "../utils/col-cache.js";
+import { colCache } from "../utils/col-cache";
 
 interface ValidationModel {
   [address: string]: any;

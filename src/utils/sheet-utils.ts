@@ -3,12 +3,12 @@
  * Provides convenient helper functions for common spreadsheet operations
  */
 
-import { Workbook } from "../doc/workbook.js";
-import type { Worksheet } from "../doc/worksheet.js";
-import type { Cell } from "../doc/cell.js";
-import { colCache } from "./col-cache.js";
-import type { CellValue } from "../types.js";
-import { format as cellFormat } from "./cell-format.js";
+import { Workbook } from "../doc/workbook";
+import type { Worksheet } from "../doc/worksheet";
+import type { Cell } from "../doc/cell";
+import { colCache } from "./col-cache";
+import type { CellValue } from "../types";
+import { format as cellFormat } from "./cell-format";
 
 /**
  * Convert a Date object back to Excel serial number without timezone issues.

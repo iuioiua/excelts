@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { testDataPath } from "../../utils/test-file-helper.js";
-import { WorkbookReader } from "../../../index.js";
+import { testDataPath } from "../../utils/test-file-helper";
+import { WorkbookReader } from "../../../index";
 import fs from "fs";
 
 describe("github issues: Date field with cache style", () => {

@@ -1,6 +1,6 @@
 import { Duplex } from "stream";
-import { inherits, nop } from "./utils.js";
-import { StringBuf } from "./string-buf.js";
+import { inherits, nop } from "./utils";
+import { StringBuf } from "./string-buf";
 
 // =============================================================================
 // data chunks - encapsulating incoming data

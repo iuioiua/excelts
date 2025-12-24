@@ -1,6 +1,6 @@
-import { TextXform } from "./text-xform.js";
-import { FontXform } from "../style/font-xform.js";
-import { BaseXform } from "../base-xform.js";
+import { TextXform } from "./text-xform";
+import { FontXform } from "../style/font-xform";
+import { BaseXform } from "../base-xform";
 
 // <r>
 //   <rPr>

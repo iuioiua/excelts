@@ -8,10 +8,10 @@
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat.js";
 import utc from "dayjs/plugin/utc.js";
-import { parseCsv, formatCsv, type CsvParseOptions, type CsvFormatOptions } from "./csv-core.js";
-import type { Workbook } from "../doc/workbook.js";
-import type { Worksheet } from "../doc/worksheet.js";
-import type { CellErrorValue } from "../types.js";
+import { parseCsv, formatCsv, type CsvParseOptions, type CsvFormatOptions } from "./csv-core";
+import type { Workbook } from "../doc/workbook";
+import type { Worksheet } from "../doc/worksheet";
+import type { CellErrorValue } from "../types";
 
 // Initialize dayjs plugins
 dayjs.extend(customParseFormat);
@@ -211,5 +211,5 @@ export function formatWorksheetToCsv(
 }
 
 // Re-export core types
-export { parseCsv, formatCsv, parseCsvStream } from "./csv-core.js";
-export type { CsvParseOptions, CsvFormatOptions, CsvParseResult } from "./csv-core.js";
+export { parseCsv, formatCsv, parseCsvStream } from "./csv-core";
+export type { CsvParseOptions, CsvFormatOptions, CsvParseResult } from "./csv-core";

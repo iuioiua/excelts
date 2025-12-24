@@ -1,5 +1,5 @@
-import { colCache } from "../utils/col-cache.js";
-import type { Worksheet } from "./worksheet.js";
+import { colCache } from "../utils/col-cache";
+import type { Worksheet } from "./worksheet";
 
 interface AnchorModel {
   nativeCol: number;

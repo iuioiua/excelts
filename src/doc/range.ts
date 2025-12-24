@@ -1,5 +1,5 @@
-import { colCache } from "../utils/col-cache.js";
-import type { Address } from "../types.js";
+import { colCache } from "../utils/col-cache";
+import type { Address } from "../types";
 
 interface RangeModel {
   top: number;

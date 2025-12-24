@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DefinedNames } from "../../../doc/defined-names.js";
+import { DefinedNames } from "../../../doc/defined-names";
 
 describe("DefinedNames", () => {
   it("adds names for cells", () => {

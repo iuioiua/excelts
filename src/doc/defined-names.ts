@@ -1,7 +1,7 @@
-import { colCache, type DecodedRange } from "../utils/col-cache.js";
-import { CellMatrix } from "../utils/cell-matrix.js";
-import { Range } from "./range.js";
-import type { Address } from "../types.js";
+import { colCache, type DecodedRange } from "../utils/col-cache";
+import { CellMatrix } from "../utils/cell-matrix";
+import { Range } from "./range";
+import type { Address } from "../types";
 
 const rangeRegexp = /[$](\w+)[$](\d+)(:[$](\w+)[$](\d+))?/;
 

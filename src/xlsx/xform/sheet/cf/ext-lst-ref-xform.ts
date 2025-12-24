@@ -1,5 +1,5 @@
-import { BaseXform } from "../../base-xform.js";
-import { CompositeXform } from "../../composite-xform.js";
+import { BaseXform } from "../../base-xform";
+import { CompositeXform } from "../../composite-xform";
 
 class X14IdXform extends BaseXform {
   get tag(): string {

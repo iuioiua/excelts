@@ -8,9 +8,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import type { CsvParseResult } from "../../../csv/csv-core.js";
-import { parseCsv, formatCsv, parseCsvStream } from "../../../csv/csv-core.js";
-import { CsvParserStream, CsvFormatterStream } from "../../../csv/csv-stream.js";
+import type { CsvParseResult } from "../../../csv/csv-core";
+import { parseCsv, formatCsv, parseCsvStream } from "../../../csv/csv-core";
+import { CsvParserStream, CsvFormatterStream } from "../../../csv/csv-stream";
 
 // =============================================================================
 // Section 1: ignoreEmpty (alias for skipEmptyLines)

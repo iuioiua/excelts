@@ -14,10 +14,10 @@ import fs from "fs";
 import type { UnzipFile } from "fflate";
 import { Unzip, UnzipInflate } from "fflate";
 import { PassThrough } from "stream";
-import { ZipWriter } from "../utils/zip-stream.js";
-import { StreamBuf } from "../utils/stream-buf.js";
-import { fileExists, bufferToString } from "../utils/utils.js";
-import { XLSXBase, type IStreamBuf, type IParseStream } from "./xlsx.base.js";
+import { ZipWriter } from "../utils/zip-stream";
+import { StreamBuf } from "../utils/stream-buf";
+import { fileExists, bufferToString } from "../utils/utils";
+import { XLSXBase, type IStreamBuf, type IParseStream } from "./xlsx.base";
 
 function fsReadFileAsync(filename: string, options?: any): Promise<Buffer> {
   return new Promise((resolve, reject) => {

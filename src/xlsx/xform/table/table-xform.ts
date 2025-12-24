@@ -1,9 +1,9 @@
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { BaseXform } from "../base-xform.js";
-import { ListXform } from "../list-xform.js";
-import { AutoFilterXform } from "./auto-filter-xform.js";
-import { TableColumnXform } from "./table-column-xform.js";
-import { TableStyleInfoXform } from "./table-style-info-xform.js";
+import { XmlStream } from "../../../utils/xml-stream";
+import { BaseXform } from "../base-xform";
+import { ListXform } from "../list-xform";
+import { AutoFilterXform } from "./auto-filter-xform";
+import { TableColumnXform } from "./table-column-xform";
+import { TableStyleInfoXform } from "./table-style-info-xform";
 
 interface TableModel {
   id?: number;

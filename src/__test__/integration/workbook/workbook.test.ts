@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { testUtils } from "../../utils/index.js";
-import { testFilePath, testDataPath } from "../../utils/test-file-helper.js";
-import { Workbook } from "../../../index.js";
-import { ValueType } from "../../../doc/enums.js";
+import { testUtils } from "../../utils/index";
+import { testFilePath, testDataPath } from "../../utils/test-file-helper";
+import { Workbook } from "../../../index";
+import { ValueType } from "../../../doc/enums";
 
 const TEST_XLSX_FILE_NAME = testFilePath("workbook.test");
 const TEST_CSV_FILE_NAME = testFilePath("wb.test", ".csv");

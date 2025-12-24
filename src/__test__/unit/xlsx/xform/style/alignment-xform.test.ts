@@ -1,6 +1,6 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { AlignmentXform } from "../../../../../xlsx/xform/style/alignment-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { AlignmentXform } from "../../../../../xlsx/xform/style/alignment-xform";
 
 const expectations = [
   {

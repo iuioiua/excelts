@@ -1,6 +1,6 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { MergeCellXform } from "../../../../../xlsx/xform/sheet/merge-cell-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { MergeCellXform } from "../../../../../xlsx/xform/sheet/merge-cell-xform";
 
 const expectations = [
   {

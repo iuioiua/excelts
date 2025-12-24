@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { testDataPath, testFilePath } from "../../utils/test-file-helper.js";
-import { Workbook } from "../../../index.js";
+import { testDataPath, testFilePath } from "../../utils/test-file-helper";
+import { Workbook } from "../../../index";
 
 // this file to contain integration tests created from github issues
 

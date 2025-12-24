@@ -1,6 +1,6 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { TableColumnXform } from "../../../../../xlsx/xform/table/table-column-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { TableColumnXform } from "../../../../../xlsx/xform/table/table-column-xform";
 
 const expectations = [
   {

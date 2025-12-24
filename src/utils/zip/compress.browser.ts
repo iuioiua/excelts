@@ -10,7 +10,7 @@ import {
   hasCompressionStream,
   compressWithStream,
   decompressWithStream
-} from "./compress.base.js";
+} from "./compress.base";
 
 // Re-export shared types and utilities
 export { type CompressOptions, hasCompressionStream };

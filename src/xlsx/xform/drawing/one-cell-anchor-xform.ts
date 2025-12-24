@@ -1,8 +1,8 @@
-import { BaseCellAnchorXform } from "./base-cell-anchor-xform.js";
-import { StaticXform } from "../static-xform.js";
-import { CellPositionXform } from "./cell-position-xform.js";
-import { ExtXform } from "./ext-xform.js";
-import { PicXform } from "./pic-xform.js";
+import { BaseCellAnchorXform } from "./base-cell-anchor-xform";
+import { StaticXform } from "../static-xform";
+import { CellPositionXform } from "./cell-position-xform";
+import { ExtXform } from "./ext-xform";
+import { PicXform } from "./pic-xform";
 
 interface OneCellModel {
   range: {

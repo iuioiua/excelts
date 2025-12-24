@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createZip, createZipSync, ZipBuilder } from "../../../utils/zip/index.js";
-import { extractAll, extractFile, listFiles } from "../../../utils/unzip/index.js";
+import { createZip, createZipSync, ZipBuilder } from "../../../utils/zip/index";
+import { extractAll, extractFile, listFiles } from "../../../utils/unzip/index";
 
 // Helper to decode Uint8Array to string
 const decode = (data: Uint8Array): string => new TextDecoder().decode(data);

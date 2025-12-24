@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Range } from "../../../doc/range.js";
+import { Range } from "../../../doc/range";
 
 describe("Range", () => {
   function check(

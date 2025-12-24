@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { testDataPath } from "../../utils/test-file-helper.js";
-import { Workbook } from "../../../index.js";
+import { testDataPath } from "../../utils/test-file-helper";
+import { Workbook } from "../../../index";
 
 describe("github issues", () => {
   it("issue 991 - differentiates between strings with leading numbers and dates when reading csv files", () => {

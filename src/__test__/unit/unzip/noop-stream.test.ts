@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { NoopStream } from "../../../utils/unzip/noop-stream.js";
+import { NoopStream } from "../../../utils/unzip/noop-stream";
 import { Readable } from "stream";
 
 describe("noop-stream", () => {

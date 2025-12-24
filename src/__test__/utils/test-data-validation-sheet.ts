@@ -1,4 +1,4 @@
-import { fix, concatenateFormula } from "./tools.js";
+import { fix, concatenateFormula } from "./tools";
 import dataValidationsJson from "./data/data-validations.json" with { type: "json" };
 
 const self = {

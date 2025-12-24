@@ -1,6 +1,6 @@
-import { XmlStream } from "../../../utils/xml-stream.js";
-import { BaseXform } from "../base-xform.js";
-import { RelationshipXform } from "./relationship-xform.js";
+import { XmlStream } from "../../../utils/xml-stream";
+import { BaseXform } from "../base-xform";
+import { RelationshipXform } from "./relationship-xform";
 
 class RelationshipsXform extends BaseXform {
   declare public parser: any;

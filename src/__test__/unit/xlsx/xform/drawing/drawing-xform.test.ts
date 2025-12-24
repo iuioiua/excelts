@@ -2,12 +2,12 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { DrawingXform } from "../../../../../xlsx/xform/drawing/drawing-xform.js";
-import { drawing10 } from "./data/drawing.1.0.js";
-import { drawing11 } from "./data/drawing.1.1.js";
-import { drawing13 } from "./data/drawing.1.3.js";
-import { drawing14 } from "./data/drawing.1.4.js";
+import { testXformHelper } from "../test-xform-helper";
+import { DrawingXform } from "../../../../../xlsx/xform/drawing/drawing-xform";
+import { drawing10 } from "./data/drawing.1.0";
+import { drawing11 } from "./data/drawing.1.1";
+import { drawing13 } from "./data/drawing.1.3";
+import { drawing14 } from "./data/drawing.1.4";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

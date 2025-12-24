@@ -1,4 +1,4 @@
-import { BaseXform } from "../../base-xform.js";
+import { BaseXform } from "../../base-xform";
 
 class CfIconExtXform extends BaseXform {
   get tag() {

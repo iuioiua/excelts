@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { parseCsv, formatCsv, parseCsvStream } from "../../../csv/csv-core.js";
+import { parseCsv, formatCsv, parseCsvStream } from "../../../csv/csv-core";
 
 describe("CSV Core - RFC 4180 Compliance", () => {
   // ===========================================================================

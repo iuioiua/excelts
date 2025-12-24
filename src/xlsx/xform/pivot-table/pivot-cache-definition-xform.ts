@@ -1,8 +1,8 @@
-import { BaseXform } from "../base-xform.js";
-import { CacheField } from "./cache-field.js";
-import { CacheFieldXform, type CacheFieldModel } from "./cache-field-xform.js";
-import { XmlStream } from "../../../utils/xml-stream.js";
-import type { PivotTableSource } from "../../../doc/pivot-table.js";
+import { BaseXform } from "../base-xform";
+import { CacheField } from "./cache-field";
+import { CacheFieldXform, type CacheFieldModel } from "./cache-field-xform";
+import { XmlStream } from "../../../utils/xml-stream";
+import type { PivotTableSource } from "../../../doc/pivot-table";
 
 /**
  * Model for parsed pivot cache definition

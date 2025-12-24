@@ -1,10 +1,10 @@
-import { BaseXform } from "../base-xform.js";
-import { AlignmentXform } from "./alignment-xform.js";
-import { BorderXform } from "./border-xform.js";
-import { FillXform } from "./fill-xform.js";
-import { FontXform } from "./font-xform.js";
-import { NumFmtXform } from "./numfmt-xform.js";
-import { ProtectionXform } from "./protection-xform.js";
+import { BaseXform } from "../base-xform";
+import { AlignmentXform } from "./alignment-xform";
+import { BorderXform } from "./border-xform";
+import { FillXform } from "./fill-xform";
+import { FontXform } from "./font-xform";
+import { NumFmtXform } from "./numfmt-xform";
+import { ProtectionXform } from "./protection-xform";
 
 // <xf numFmtId="[numFmtId]" fontId="[fontId]" fillId="[fillId]" borderId="[xf.borderId]" xfId="[xfId]">
 //   Optional <alignment>

@@ -6,7 +6,7 @@
  * Commits in this fork are (c) Ziggy Jonsson (ziggy.jonsson.nyc@gmail.com)
  */
 
-import { parse } from "./parse-buffer.js";
+import { parse } from "./parse-buffer";
 
 export interface ZipVars {
   uncompressedSize: number;

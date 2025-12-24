@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
+import { Workbook } from "../../../index";
 
 describe("Worksheet", () => {
   describe("Views", () => {

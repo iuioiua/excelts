@@ -1,6 +1,6 @@
-import { BaseXform } from "../base-xform.js";
-import { VmlTextboxXform } from "./vml-textbox-xform.js";
-import { VmlClientDataXform } from "./vml-client-data-xform.js";
+import { BaseXform } from "../base-xform";
+import { VmlTextboxXform } from "./vml-textbox-xform";
+import { VmlClientDataXform } from "./vml-client-data-xform";
 
 interface ShapeModel {
   note: {

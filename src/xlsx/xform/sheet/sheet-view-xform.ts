@@ -1,5 +1,5 @@
-import { colCache } from "../../../utils/col-cache.js";
-import { BaseXform } from "../base-xform.js";
+import { colCache } from "../../../utils/col-cache";
+import { BaseXform } from "../base-xform";
 
 const VIEW_STATES: { [key: string]: string } = {
   frozen: "frozen",

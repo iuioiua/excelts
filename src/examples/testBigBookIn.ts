@@ -1,7 +1,7 @@
-import { Workbook, WorkbookReader } from "../index.js";
-import { HrStopwatch } from "./utils/hr-stopwatch.js";
-import { ColumnSum } from "./utils/column-sum.js";
-import { fmtNumber } from "./utils/utils.js";
+import { Workbook, WorkbookReader } from "../index";
+import { HrStopwatch } from "./utils/hr-stopwatch";
+import { ColumnSum } from "./utils/column-sum";
+import { fmtNumber } from "./utils/utils";
 
 if (process.argv[2] === "help") {
   console.log("Usage:");

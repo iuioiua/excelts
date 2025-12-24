@@ -1,7 +1,7 @@
-import { BaseXform } from "../base-xform.js";
-import { VmlAnchorXform } from "./vml-anchor-xform.js";
-import { VmlProtectionXform } from "./style/vml-protection-xform.js";
-import { VmlPositionXform } from "./style/vml-position-xform.js";
+import { BaseXform } from "../base-xform";
+import { VmlAnchorXform } from "./vml-anchor-xform";
+import { VmlProtectionXform } from "./style/vml-protection-xform";
+import { VmlPositionXform } from "./style/vml-position-xform";
 
 const POSITION_TYPE = ["twoCells", "oneCells", "absolute"];
 

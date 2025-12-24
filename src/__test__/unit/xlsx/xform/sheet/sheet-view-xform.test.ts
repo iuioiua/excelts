@@ -1,7 +1,7 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { SheetViewXform } from "../../../../../xlsx/xform/sheet/sheet-view-xform.js";
-import { ListXform } from "../../../../../xlsx/xform/list-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { SheetViewXform } from "../../../../../xlsx/xform/sheet/sheet-view-xform";
+import { ListXform } from "../../../../../xlsx/xform/list-xform";
 
 const expectations = [
   {

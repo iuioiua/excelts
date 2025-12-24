@@ -1,6 +1,6 @@
 import events from "events";
-import { ZipBuilder } from "./zip/index.js";
-import { StreamBuf } from "./stream-buf.js";
+import { ZipBuilder } from "./zip/index";
+import { StreamBuf } from "./stream-buf";
 
 interface ZipWriterOptions {
   /** Compression method: "DEFLATE" (default) or "STORE" (no compression) */

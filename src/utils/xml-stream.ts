@@ -1,4 +1,4 @@
-import { xmlEncode } from "./utils.js";
+import { xmlEncode } from "./utils";
 
 // constants
 const OPEN_ANGLE = "<";

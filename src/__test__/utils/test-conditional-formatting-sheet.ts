@@ -1,6 +1,6 @@
 import conditionalFormattingJson from "./data/conditional-formatting.json" with { type: "json" };
 import { expect } from "vitest";
-import { fix } from "./tools.js";
+import { fix } from "./tools";
 
 const self = {
   conditionalFormattings: fix(conditionalFormattingJson),

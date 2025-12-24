@@ -1,8 +1,8 @@
 import { describe, it, beforeAll, afterAll } from "vitest";
 import { Readable } from "stream";
 import express from "express";
-import { testUtils } from "../utils/index.js";
-import { Workbook } from "../../index.js";
+import { testUtils } from "../utils/index";
+import { Workbook } from "../../index";
 
 describe("Express", () => {
   let server: any;

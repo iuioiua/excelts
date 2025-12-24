@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { WorksheetWriter } from "../../../stream/xlsx/worksheet-writer.js";
-import { StreamBuf } from "../../../utils/stream-buf.js";
+import { WorksheetWriter } from "../../../stream/xlsx/worksheet-writer";
+import { StreamBuf } from "../../../utils/stream-buf";
 
 describe("Worksheet Writer", () => {
   it("generates valid xml even when there is no data", () =>

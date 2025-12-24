@@ -7,9 +7,9 @@
  * - streaming: NOT supported (throws error)
  */
 
-import { WorkbookBase } from "./workbook.base.js";
-import { XLSX } from "../xlsx/xlsx.browser.js";
-import { CSV } from "../csv/csv.browser.js";
+import { WorkbookBase } from "./workbook.base";
+import { XLSX } from "../xlsx/xlsx.browser";
+import { CSV } from "../csv/csv.browser";
 
 class Workbook extends WorkbookBase {
   private _xlsx?: XLSX;

@@ -1,4 +1,4 @@
-import { BaseXform } from "./base-xform.js";
+import { BaseXform } from "./base-xform";
 
 /* 'virtual' methods used as a form of documentation */
 

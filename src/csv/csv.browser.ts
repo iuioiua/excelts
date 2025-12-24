@@ -12,9 +12,9 @@ import {
   formatWorksheetToCsv,
   type CsvReadOptions,
   type CsvWriteOptions
-} from "./csv.base.js";
-import type { Workbook } from "../doc/workbook.browser.js";
-import type { Worksheet } from "../doc/worksheet.js";
+} from "./csv.base";
+import type { Workbook } from "../doc/workbook.browser";
+import type { Worksheet } from "../doc/worksheet";
 
 class CSV {
   public workbook: Workbook;
@@ -89,4 +89,4 @@ class CSV {
 }
 
 export { CSV };
-export type { CsvReadOptions, CsvWriteOptions } from "./csv.base.js";
+export type { CsvReadOptions, CsvWriteOptions } from "./csv.base";

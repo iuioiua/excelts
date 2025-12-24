@@ -5,8 +5,8 @@
 // Last updated: 2023-10-19
 // --------------------------------------------------
 
-import { Workbook } from "../index.js";
-import { HrStopwatch } from "./utils/hr-stopwatch.js";
+import { Workbook } from "../index";
+import { HrStopwatch } from "./utils/hr-stopwatch";
 
 function main(filepath) {
   const workbook = new Workbook();

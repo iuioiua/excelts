@@ -1,5 +1,5 @@
-import { PageBreaksXform } from "./page-breaks-xform.js";
-import { ListXform } from "../list-xform.js";
+import { PageBreaksXform } from "./page-breaks-xform";
+import { ListXform } from "../list-xform";
 
 class RowBreaksXform extends ListXform {
   constructor() {

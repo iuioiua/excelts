@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
-import { Enums } from "../../../doc/enums.js";
+import { Workbook } from "../../../index";
+import { Enums } from "../../../doc/enums";
 
 describe("Worksheet", () => {
   describe("Values", () => {

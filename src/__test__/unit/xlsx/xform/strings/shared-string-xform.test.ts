@@ -1,6 +1,6 @@
 import { describe } from "vitest";
-import { testXformHelper } from "../test-xform-helper.js";
-import { SharedStringXform } from "../../../../../xlsx/xform/strings/shared-string-xform.js";
+import { testXformHelper } from "../test-xform-helper";
+import { SharedStringXform } from "../../../../../xlsx/xform/strings/shared-string-xform";
 
 const expectations = [
   {

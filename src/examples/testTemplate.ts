@@ -1,4 +1,4 @@
-import { Workbook } from "../index.js";
+import { Workbook } from "../index";
 
 const workbook = new Workbook();
 workbook.xlsx

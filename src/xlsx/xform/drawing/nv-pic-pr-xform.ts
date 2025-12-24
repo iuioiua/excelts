@@ -1,6 +1,6 @@
-import { BaseXform } from "../base-xform.js";
-import { CNvPrXform } from "./c-nv-pr-xform.js";
-import { CNvPicPrXform } from "./c-nv-pic-pr-xform.js";
+import { BaseXform } from "../base-xform";
+import { CNvPrXform } from "./c-nv-pr-xform";
+import { CNvPicPrXform } from "./c-nv-pic-pr-xform";
 
 class NvPicPrXform extends BaseXform {
   declare public map: { [key: string]: any };

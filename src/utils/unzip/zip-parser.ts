@@ -4,7 +4,7 @@
  * No dependency on Node.js stream module
  */
 
-import { decompress, decompressSync } from "../zip/compress.js";
+import { decompress, decompressSync } from "../zip/compress";
 
 // ZIP file signatures
 const LOCAL_FILE_HEADER_SIG = 0x04034b50;

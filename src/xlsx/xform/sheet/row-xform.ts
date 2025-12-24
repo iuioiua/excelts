@@ -1,7 +1,7 @@
-import { BaseXform } from "../base-xform.js";
-import { CellXform } from "./cell-xform.js";
-import { parseBoolean } from "../../../utils/utils.js";
-import { colCache } from "../../../utils/col-cache.js";
+import { BaseXform } from "../base-xform";
+import { CellXform } from "./cell-xform";
+import { parseBoolean } from "../../../utils/utils";
+import { colCache } from "../../../utils/col-cache";
 
 interface RowXformOptions {
   maxItems?: number;

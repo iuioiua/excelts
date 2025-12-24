@@ -1,6 +1,6 @@
-import { colCache } from "../utils/col-cache.js";
-import { Anchor, type AnchorModel } from "./anchor.js";
-import type { Worksheet } from "./worksheet.js";
+import { colCache } from "../utils/col-cache";
+import { Anchor, type AnchorModel } from "./anchor";
+import type { Worksheet } from "./worksheet";
 
 interface ImageHyperlinks {
   hyperlink?: string;

@@ -1,11 +1,11 @@
-import { BaseXform } from "../../base-xform.js";
-import { CompositeXform } from "../../composite-xform.js";
-import { Range } from "../../../../doc/range.js";
-import { DatabarXform } from "./databar-xform.js";
-import { ExtLstRefXform } from "./ext-lst-ref-xform.js";
-import { FormulaXform } from "./formula-xform.js";
-import { ColorScaleXform } from "./color-scale-xform.js";
-import { IconSetXform } from "./icon-set-xform.js";
+import { BaseXform } from "../../base-xform";
+import { CompositeXform } from "../../composite-xform";
+import { Range } from "../../../../doc/range";
+import { DatabarXform } from "./databar-xform";
+import { ExtLstRefXform } from "./ext-lst-ref-xform";
+import { FormulaXform } from "./formula-xform";
+import { ColorScaleXform } from "./color-scale-xform";
+import { IconSetXform } from "./icon-set-xform";
 
 const extIcons = {
   "3Triangles": true,

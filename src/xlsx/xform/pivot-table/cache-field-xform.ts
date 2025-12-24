@@ -1,5 +1,5 @@
-import { BaseXform } from "../base-xform.js";
-import { xmlDecode } from "../../../utils/utils.js";
+import { BaseXform } from "../base-xform";
+import { xmlDecode } from "../../../utils/utils";
 
 /**
  * Parsed cache field model containing name and shared items (if any)

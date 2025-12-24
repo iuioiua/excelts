@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
-import { testDataPath } from "../../utils/test-file-helper.js";
-import { Workbook } from "../../../index.js";
+import { testDataPath } from "../../utils/test-file-helper";
+import { Workbook } from "../../../index";
 
 describe("github issues", () => {
   describe("issue 539 - <contentType /> element", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
+import { Workbook } from "../../../index";
 
 describe("pull request  2244", () => {
   it("pull request 2244- Fix xlsx.writeFile() not catching error when error occurs", async () => {

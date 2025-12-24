@@ -1,4 +1,4 @@
-import { colCache } from "../utils/col-cache.js";
+import { colCache } from "../utils/col-cache";
 import type {
   Address,
   CellFormulaValue,
@@ -6,9 +6,9 @@ import type {
   Style,
   TableColumnProperties,
   TableStyleProperties
-} from "../types.js";
-import type { Worksheet } from "./worksheet.js";
-import type { Cell } from "./cell.js";
+} from "../types";
+import type { Worksheet } from "./worksheet";
+import type { Cell } from "./cell";
 
 interface TableModel {
   ref: string;

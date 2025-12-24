@@ -1,9 +1,9 @@
-import { colCache } from "../utils/col-cache.js";
-import { isEqual } from "../utils/under-dash.js";
-import { Enums } from "./enums.js";
-import type { Cell, CellValueType } from "./cell.js";
-import type { Row } from "./row.js";
-import type { Worksheet } from "./worksheet.js";
+import { colCache } from "../utils/col-cache";
+import { isEqual } from "../utils/under-dash";
+import { Enums } from "./enums";
+import type { Cell, CellValueType } from "./cell";
+import type { Row } from "./row";
+import type { Worksheet } from "./worksheet";
 import type {
   Style,
   NumFmt,
@@ -13,7 +13,7 @@ import type {
   Borders,
   Fill,
   CellValue
-} from "../types.js";
+} from "../types";
 
 const DEFAULT_COLUMN_WIDTH = 9;
 

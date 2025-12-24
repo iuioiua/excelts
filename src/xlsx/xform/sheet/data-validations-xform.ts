@@ -1,8 +1,8 @@
-import { BaseXform } from "../base-xform.js";
-import { Range } from "../../../doc/range.js";
-import { parseBoolean, dateToExcel, excelToDate } from "../../../utils/utils.js";
-import { colCache } from "../../../utils/col-cache.js";
-import { isEqual } from "../../../utils/under-dash.js";
+import { BaseXform } from "../base-xform";
+import { Range } from "../../../doc/range";
+import { parseBoolean, dateToExcel, excelToDate } from "../../../utils/utils";
+import { colCache } from "../../../utils/col-cache";
+import { isEqual } from "../../../utils/under-dash";
 
 function assign(definedName: any, attributes: any, name: string, defaultValue?: any): void {
   const value = attributes[name];

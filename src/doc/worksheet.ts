@@ -1,16 +1,16 @@
-import { colCache, type DecodedRange } from "../utils/col-cache.js";
-import { Range, type RangeInput } from "./range.js";
-import { Row, type RowModel } from "./row.js";
-import { Column, type ColumnModel, type ColumnDefn } from "./column.js";
-import type { Cell, FormulaResult, FormulaValueData } from "./cell.js";
-import { Enums } from "./enums.js";
-import { Image, type ImageModel } from "./image.js";
-import { Table, type TableModel } from "./table.js";
-import { DataValidations } from "./data-validations.js";
-import { Encryptor } from "../utils/encryptor.js";
-import { makePivotTable, type PivotTable, type PivotTableModel } from "./pivot-table.js";
-import { copyStyle } from "../utils/copy-style.js";
-import type { Workbook } from "./workbook.js";
+import { colCache, type DecodedRange } from "../utils/col-cache";
+import { Range, type RangeInput } from "./range";
+import { Row, type RowModel } from "./row";
+import { Column, type ColumnModel, type ColumnDefn } from "./column";
+import type { Cell, FormulaResult, FormulaValueData } from "./cell";
+import { Enums } from "./enums";
+import { Image, type ImageModel } from "./image";
+import { Table, type TableModel } from "./table";
+import { DataValidations } from "./data-validations";
+import { Encryptor } from "../utils/encryptor";
+import { makePivotTable, type PivotTable, type PivotTableModel } from "./pivot-table";
+import { copyStyle } from "../utils/copy-style";
+import type { Workbook } from "./workbook";
 import type {
   AddImageRange,
   AutoFilter,
@@ -22,7 +22,7 @@ import type {
   TableProperties,
   WorksheetProperties,
   WorksheetView
-} from "../types.js";
+} from "../types";
 
 // Type for data validation model - maps address to validation
 type DataValidationModel = { [address: string]: DataValidation | undefined };

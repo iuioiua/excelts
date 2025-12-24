@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { Workbook } from "../../../index.js";
-import { testFilePath } from "../../utils/test-file-helper.js";
+import { Workbook } from "../../../index";
+import { testFilePath } from "../../utils/test-file-helper";
 
 const TEST_XLSX_FILE_NAME = testFilePath("workbook-styles.test");
 
 // =============================================================================
 // Sample Data
-import { richTextSample } from "../data/rich-text-sample.js";
+import { richTextSample } from "../data/rich-text-sample";
 import richTextSampleA1 from "../data/rich-text-sample-a1.json" with { type: "json" };
 import { PassThrough } from "stream";
-import { testUtils } from "../../utils/index.js";
+import { testUtils } from "../../utils/index";
 
 // =============================================================================
 // Tests

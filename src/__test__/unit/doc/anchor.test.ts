@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { testUtils } from "../../utils/index.js";
-import { Anchor } from "../../../doc/anchor.js";
+import { testUtils } from "../../utils/index";
+import { Anchor } from "../../../doc/anchor";
 
 describe("Anchor", () => {
   describe("colWidth", () => {

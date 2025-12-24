@@ -1,7 +1,7 @@
-import { randomName } from "./utils/utils.js";
-import { HrStopwatch } from "./utils/hr-stopwatch.js";
-import { StringBuf } from "../utils/string-buf.js";
-import { delay } from "../utils/utils.js";
+import { randomName } from "./utils/utils";
+import { HrStopwatch } from "./utils/hr-stopwatch";
+import { StringBuf } from "../utils/string-buf";
+import { delay } from "../utils/utils";
 
 const SIZE = 1048576;
 

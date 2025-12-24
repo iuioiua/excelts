@@ -1,12 +1,12 @@
 import { EventEmitter } from "events";
-import { parseSax } from "../../utils/parse-sax.js";
-import { xmlDecode, isDateFmt, excelToDate } from "../../utils/utils.js";
-import { colCache } from "../../utils/col-cache.js";
-import { Dimensions } from "../../doc/range.js";
-import { Row } from "../../doc/row.js";
-import { Column } from "../../doc/column.js";
-import type { WorkbookReader, InternalWorksheetOptions } from "./workbook-reader.js";
-import type { WorksheetState, CellErrorValue } from "../../types.js";
+import { parseSax } from "../../utils/parse-sax";
+import { xmlDecode, isDateFmt, excelToDate } from "../../utils/utils";
+import { colCache } from "../../utils/col-cache";
+import { Dimensions } from "../../doc/range";
+import { Row } from "../../doc/row";
+import { Column } from "../../doc/column";
+import type { WorkbookReader, InternalWorksheetOptions } from "./workbook-reader";
+import type { WorksheetState, CellErrorValue } from "../../types";
 
 // ============================================================================
 // Internal Types

@@ -1,7 +1,7 @@
-import { BaseXform } from "../../base-xform.js";
-import { CompositeXform } from "../../composite-xform.js";
-import { ColorXform } from "../../style/color-xform.js";
-import { CfvoExtXform } from "./cfvo-ext-xform.js";
+import { BaseXform } from "../../base-xform";
+import { CompositeXform } from "../../composite-xform";
+import { ColorXform } from "../../style/color-xform";
+import { CfvoExtXform } from "./cfvo-ext-xform";
 
 class DatabarExtXform extends CompositeXform {
   cfvoXform: CfvoExtXform;

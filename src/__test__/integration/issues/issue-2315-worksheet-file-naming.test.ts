@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { Workbook } from "../../../index.js";
-import { extractAll } from "../../../utils/unzip/index.js";
+import { Workbook } from "../../../index";
+import { extractAll } from "../../../utils/unzip/index";
 
 // Issue 2315: File corruption due to incorrect worksheet file naming
 // When worksheets have non-sequential sheetIds (e.g., 1, 3 instead of 1, 2),

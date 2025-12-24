@@ -1,5 +1,5 @@
-import { BaseXform } from "../base-xform.js";
-import { FilterColumnXform } from "./filter-column-xform.js";
+import { BaseXform } from "../base-xform";
+import { FilterColumnXform } from "./filter-column-xform";
 
 interface AutoFilterModel {
   autoFilterRef: string;

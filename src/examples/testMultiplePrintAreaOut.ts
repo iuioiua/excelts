@@ -1,4 +1,4 @@
-import { Workbook } from "../index.js";
+import { Workbook } from "../index";
 
 const [, , filename] = process.argv;
 

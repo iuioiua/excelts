@@ -4,8 +4,8 @@ import {
   createZipSync,
   ZipBuilder,
   type ZipEntry
-} from "../../../utils/zip/zip-builder.js";
-import { decompress } from "../../../utils/zip/compress.js";
+} from "../../../utils/zip/zip-builder";
+import { decompress } from "../../../utils/zip/compress";
 
 // Helper to read ZIP structure
 function parseZipStructure(data: Uint8Array): {

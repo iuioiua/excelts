@@ -1,5 +1,5 @@
-import { parseSax } from "../../utils/parse-sax.js";
-import { XmlStream } from "../../utils/xml-stream.js";
+import { parseSax } from "../../utils/parse-sax";
+import { XmlStream } from "../../utils/xml-stream";
 
 /* 'virtual' methods used as a form of documentation */
 

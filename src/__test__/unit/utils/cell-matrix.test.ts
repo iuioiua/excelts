@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CellMatrix } from "../../../utils/cell-matrix.js";
+import { CellMatrix } from "../../../utils/cell-matrix";
 
 describe("CellMatrix", () => {
   it("getCell always returns a cell", () => {

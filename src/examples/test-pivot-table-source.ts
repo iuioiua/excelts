@@ -11,8 +11,8 @@
 // - Table can start at any cell (e.g., "A1", "C5", etc.)
 // --------------------------------------------------
 
-import { Workbook } from "../index.js";
-import { HrStopwatch } from "./utils/hr-stopwatch.js";
+import { Workbook } from "../index";
+import { HrStopwatch } from "./utils/hr-stopwatch";
 
 function main(filepath: string) {
   const workbook = new Workbook();

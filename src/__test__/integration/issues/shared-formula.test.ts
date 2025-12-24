@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { testDataPath } from "../../utils/test-file-helper.js";
-import { ValueType } from "../../../doc/enums.js";
-import { Workbook } from "../../../index.js";
+import { testDataPath } from "../../utils/test-file-helper";
+import { ValueType } from "../../../doc/enums";
+import { Workbook } from "../../../index";
 
 describe("github issues", () => {
   describe("Shared Formulas", () => {
