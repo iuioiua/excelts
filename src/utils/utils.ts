@@ -238,7 +238,7 @@ const textDecoder = new TextDecoder("utf-8");
  * Convert a Buffer or ArrayBuffer to a UTF-8 string
  * Works in both Node.js and browser environments
  */
-export function bufferToString(chunk: Buffer | ArrayBuffer | string): string {
+export function bufferToString(chunk: Buffer | ArrayBuffer | Uint8Array | string): string {
   if (typeof chunk === "string") {
     return chunk;
   }

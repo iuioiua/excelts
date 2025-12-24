@@ -106,34 +106,45 @@ cell.fill = {
 
 ## Browser Support
 
-ExcelTS supports both Node.js and browser environments:
+ExcelTS has native browser support with **zero configuration** required for modern bundlers.
+
+### Using with Bundlers (Vite, Webpack, Rollup, esbuild)
+
+Simply import ExcelTS - no polyfills or configuration needed:
 
 ```javascript
-// Browser usage
-import { Workbook } from "@cj-tech-master/excelts/browser";
+import { Workbook } from "@cj-tech-master/excelts";
 
 const workbook = new Workbook();
-// ... use workbook API
+const sheet = workbook.addWorksheet("Sheet1");
+sheet.getCell("A1").value = "Hello, Browser!";
+
+// Write to buffer and download
+const buffer = await workbook.xlsx.writeBuffer();
+const blob = new Blob([buffer], {
+  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+});
+const url = URL.createObjectURL(blob);
+// ... trigger download
 ```
 
-### Vite Configuration
+### Using with Script Tags (No Bundler)
 
-When using ExcelTS with Vite, you need to install Node.js polyfills:
-
-```bash
-npm install -D vite-plugin-node-polyfills
+```html
+<script src="https://unpkg.com/@cj-tech-master/excelts/dist/browser/excelts.iife.min.js"></script>
+<script>
+  const { Workbook } = ExcelTS;
+  const wb = new Workbook();
+  // ... use workbook API
+</script>
 ```
 
-Configure your `vite.config.ts`:
+### Browser-Specific Notes
 
-```typescript
-import { defineConfig } from 'vite'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
-
-export default defineConfig({
-  plugins: [nodePolyfills()]
-})
-```
+- **CSV operations are not supported** in browser (requires Node.js `fast-csv` module)
+- Use `xlsx.load(arrayBuffer)` instead of `xlsx.readFile()`
+- Use `xlsx.writeBuffer()` instead of `xlsx.writeFile()`
+- Worksheet protection with passwords is fully supported (pure JS SHA-512)
 
 ## Requirements
 

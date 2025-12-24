@@ -46,7 +46,8 @@ describe("ExcelTS Browser Tests", () => {
     expect(ws2!.getCell("A2").value).toEqual(7);
   });
 
-  it("should write csv via buffer", async () => {
+  // Skip CSV test - CSV support requires Node.js 'fast-csv' module which is not available in browser
+  it.skip("should write csv via buffer (Node.js only)", async () => {
     const { Workbook } = ExcelTS;
     const wb = new Workbook();
     const ws = wb.addWorksheet("blort");

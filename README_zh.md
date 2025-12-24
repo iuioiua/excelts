@@ -106,35 +106,45 @@ cell.fill = {
 
 ## 浏览器支持
 
-ExcelTS 同时支持 Node.js 和浏览器环境：
+ExcelTS 原生支持浏览器环境，现代打包工具**无需任何配置**。
 
-````javascript
+### 在打包工具中使用（Vite, Webpack, Rollup, esbuild）
+
+直接导入 ExcelTS - 无需 polyfills 或额外配置：
+
 ```javascript
-// 浏览器使用
-import { Workbook } from "@cj-tech-master/excelts/browser";
+import { Workbook } from "@cj-tech-master/excelts";
 
 const workbook = new Workbook();
-// ... 使用 workbook API
-````
+const sheet = workbook.addWorksheet("Sheet1");
+sheet.getCell("A1").value = "你好，浏览器！";
 
-### Vite 配置
-
-在 Vite 项目中使用 ExcelTS 时，需要安装 Node.js polyfills：
-
-```bash
-npm install -D vite-plugin-node-polyfills
+// 写入 buffer 并下载
+const buffer = await workbook.xlsx.writeBuffer();
+const blob = new Blob([buffer], {
+  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+});
+const url = URL.createObjectURL(blob);
+// ... 触发下载
 ```
 
-配置 `vite.config.ts`：
+### 使用 Script 标签（无打包工具）
 
-```typescript
-import { defineConfig } from 'vite'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
-
-export default defineConfig({
-  plugins: [nodePolyfills()]
-})
+```html
+<script src="https://unpkg.com/@cj-tech-master/excelts/dist/browser/excelts.iife.min.js"></script>
+<script>
+  const { Workbook } = ExcelTS;
+  const wb = new Workbook();
+  // ... 使用 workbook API
+</script>
 ```
+
+### 浏览器版本注意事项
+
+- **不支持 CSV 操作**（需要 Node.js 的 `fast-csv` 模块）
+- 使用 `xlsx.load(arrayBuffer)` 代替 `xlsx.readFile()`
+- 使用 `xlsx.writeBuffer()` 代替 `xlsx.writeFile()`
+- 完全支持带密码的工作表保护（纯 JS SHA-512 实现）
 
 ## 系统要求
 
