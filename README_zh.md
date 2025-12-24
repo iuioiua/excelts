@@ -104,6 +104,108 @@ cell.fill = {
   - 数据保护
   - 注释和批注
 
+## 流式 API（Node.js）
+
+处理大型 Excel 文件时无需将整个文件加载到内存中，ExcelTS 提供了流式读写 API。
+
+### 流式读取器
+
+以最小内存占用读取大型 XLSX 文件：
+
+```javascript
+import { WorkbookReader } from "@cj-tech-master/excelts";
+
+// 从文件路径读取
+const reader = new WorkbookReader("large-file.xlsx", {
+  worksheets: "emit", // 触发工作表事件
+  sharedStrings: "cache", // 缓存共享字符串以获取单元格值
+  hyperlinks: "ignore", // 忽略超链接
+  styles: "ignore" // 忽略样式以加快解析
+});
+
+for await (const worksheet of reader) {
+  console.log(`正在读取: ${worksheet.name}`);
+  for await (const row of worksheet) {
+    console.log(row.values);
+  }
+}
+```
+
+### 流式写入器
+
+逐行写入大型 XLSX 文件：
+
+```javascript
+import { WorkbookWriter } from "@cj-tech-master/excelts";
+
+const workbook = new WorkbookWriter({
+  filename: "output.xlsx",
+  useSharedStrings: true,
+  useStyles: true
+});
+
+const sheet = workbook.addWorksheet("Data");
+
+// 逐行写入
+for (let i = 0; i < 1000000; i++) {
+  sheet.addRow([`第 ${i} 行`, i, new Date()]).commit();
+}
+
+// 提交工作表并完成
+sheet.commit();
+await workbook.commit();
+```
+
+## CSV 支持
+
+### Node.js（完整流式支持）
+
+```javascript
+import { Workbook } from "@cj-tech-master/excelts";
+
+const workbook = new Workbook();
+
+// 从文件读取 CSV（流式）
+await workbook.csv.readFile("data.csv");
+
+// 从流读取 CSV
+import fs from "fs";
+const stream = fs.createReadStream("data.csv");
+await workbook.csv.read(stream, { sheetName: "Imported" });
+
+// 写入 CSV 到文件（流式）
+await workbook.csv.writeFile("output.csv");
+
+// 写入 CSV 到流
+const writeStream = fs.createWriteStream("output.csv");
+await workbook.csv.write(writeStream);
+
+// 写入 CSV 到 buffer
+const buffer = await workbook.csv.writeBuffer();
+```
+
+### 浏览器（内存中）
+
+```javascript
+import { Workbook } from "@cj-tech-master/excelts";
+
+const workbook = new Workbook();
+
+// 从字符串加载 CSV
+workbook.csv.load(csvString);
+
+// 从 ArrayBuffer 加载 CSV（例如从 fetch 或文件输入）
+const response = await fetch("data.csv");
+const arrayBuffer = await response.arrayBuffer();
+workbook.csv.load(arrayBuffer);
+
+// 写入 CSV 为字符串
+const csvOutput = workbook.csv.writeString();
+
+// 写入 CSV 为 Uint8Array buffer
+const buffer = workbook.csv.writeBuffer();
+```
+
 ## 浏览器支持
 
 ExcelTS 原生支持浏览器环境，现代打包工具**无需任何配置**。
@@ -152,8 +254,7 @@ const url = URL.createObjectURL(blob);
 
 ### Node.js
 
-- **Node.js >= 18.0.0**（原生支持 ES2020）
-- 推荐：Node.js >= 20.0.0 以获得最佳性能
+- **Node.js >= 20.0.0**（原生支持 ES2020）
 
 ### 浏览器（无需 Polyfills）
 
@@ -243,9 +344,9 @@ MIT License
 
 ## 链接
 
-- [GitHub 仓库](https://github.com/cjnoname/exceljs)
+- [GitHub 仓库](https://github.com/cjnoname/excelts)
 - [原始 ExcelJS](https://github.com/exceljs/exceljs)
-- [问题跟踪](https://github.com/cjnoname/exceljs/issues)
+- [问题跟踪](https://github.com/cjnoname/excelts/issues)
 
 ## 更新日志
 

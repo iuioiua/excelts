@@ -104,6 +104,108 @@ cell.fill = {
   - Data protection
   - Comments and notes
 
+## Streaming API (Node.js)
+
+For processing large Excel files without loading them entirely into memory, ExcelTS provides streaming reader and writer APIs.
+
+### Streaming Reader
+
+Read large XLSX files with minimal memory usage:
+
+```javascript
+import { WorkbookReader } from "@cj-tech-master/excelts";
+
+// Read from file path
+const reader = new WorkbookReader("large-file.xlsx", {
+  worksheets: "emit", // emit worksheet events
+  sharedStrings: "cache", // cache shared strings for cell values
+  hyperlinks: "ignore", // ignore hyperlinks
+  styles: "ignore" // ignore styles for faster parsing
+});
+
+for await (const worksheet of reader) {
+  console.log(`Reading: ${worksheet.name}`);
+  for await (const row of worksheet) {
+    console.log(row.values);
+  }
+}
+```
+
+### Streaming Writer
+
+Write large XLSX files row by row:
+
+```javascript
+import { WorkbookWriter } from "@cj-tech-master/excelts";
+
+const workbook = new WorkbookWriter({
+  filename: "output.xlsx",
+  useSharedStrings: true,
+  useStyles: true
+});
+
+const sheet = workbook.addWorksheet("Data");
+
+// Write rows one at a time
+for (let i = 0; i < 1000000; i++) {
+  sheet.addRow([`Row ${i}`, i, new Date()]).commit();
+}
+
+// Commit worksheet and finalize
+sheet.commit();
+await workbook.commit();
+```
+
+## CSV Support
+
+### Node.js (Full Streaming Support)
+
+```javascript
+import { Workbook } from "@cj-tech-master/excelts";
+
+const workbook = new Workbook();
+
+// Read CSV from file (streaming)
+await workbook.csv.readFile("data.csv");
+
+// Read CSV from stream
+import fs from "fs";
+const stream = fs.createReadStream("data.csv");
+await workbook.csv.read(stream, { sheetName: "Imported" });
+
+// Write CSV to file (streaming)
+await workbook.csv.writeFile("output.csv");
+
+// Write CSV to stream
+const writeStream = fs.createWriteStream("output.csv");
+await workbook.csv.write(writeStream);
+
+// Write CSV to buffer
+const buffer = await workbook.csv.writeBuffer();
+```
+
+### Browser (In-Memory)
+
+```javascript
+import { Workbook } from "@cj-tech-master/excelts";
+
+const workbook = new Workbook();
+
+// Load CSV from string
+workbook.csv.load(csvString);
+
+// Load CSV from ArrayBuffer (e.g., from fetch or file input)
+const response = await fetch("data.csv");
+const arrayBuffer = await response.arrayBuffer();
+workbook.csv.load(arrayBuffer);
+
+// Write CSV to string
+const csvOutput = workbook.csv.writeString();
+
+// Write CSV to Uint8Array buffer
+const buffer = workbook.csv.writeBuffer();
+```
+
 ## Browser Support
 
 ExcelTS has native browser support with **zero configuration** required for modern bundlers.
@@ -152,8 +254,7 @@ const url = URL.createObjectURL(blob);
 
 ### Node.js
 
-- **Node.js >= 18.0.0** (ES2020 native support)
-- Recommended: Node.js >= 20.0.0 for best performance
+- **Node.js >= 20.0.0** (ES2020 native support)
 
 ### Browsers (No Polyfills Required)
 
@@ -243,9 +344,9 @@ This project is a fork of ExcelJS with modernization improvements. All credit fo
 
 ## Links
 
-- [GitHub Repository](https://github.com/cjnoname/exceljs)
+- [GitHub Repository](https://github.com/cjnoname/excelts)
 - [Original ExcelJS](https://github.com/exceljs/exceljs)
-- [Issue Tracker](https://github.com/cjnoname/exceljs/issues)
+- [Issue Tracker](https://github.com/cjnoname/excelts/issues)
 
 ## Changelog
 
