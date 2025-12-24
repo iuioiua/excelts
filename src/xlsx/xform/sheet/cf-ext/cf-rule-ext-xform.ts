@@ -1,4 +1,3 @@
-import { v4 } from "uuid";
 import { BaseXform } from "../../base-xform.js";
 import { CompositeXform } from "../../composite-xform.js";
 import { DatabarExtXform } from "./databar-ext-xform.js";
@@ -42,7 +41,7 @@ class CfRuleExtXform extends CompositeXform {
 
   prepare(model) {
     if (CfRuleExtXform.isExt(model)) {
-      model.x14Id = `{${v4()}}`.toUpperCase();
+      model.x14Id = `{${crypto.randomUUID()}}`.toUpperCase();
     }
   }
 
@@ -76,7 +75,7 @@ class CfRuleExtXform extends CompositeXform {
     xmlStream.openNode(this.tag, {
       type: "iconSet",
       priority: model.priority,
-      id: model.x14Id || `{${v4()}}`
+      id: model.x14Id || `{${crypto.randomUUID()}}`
     });
 
     this.iconSetXform.render(xmlStream, model);

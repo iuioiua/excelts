@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { XmlStream } from "../../../utils/xml-stream.js";
 import { xmlEncode, xmlDecode } from "../../../utils/utils.js";
 import { BaseXform } from "../base-xform.js";
@@ -185,7 +184,7 @@ class PivotTableXform extends BaseXform {
     const { rows, columns, values, cacheFields, cacheId, applyWidthHeightFormats } = model;
 
     // Generate unique UID for each pivot table to prevent Excel treating them as identical
-    const uniqueUid = `{${uuidv4().toUpperCase()}}`;
+    const uniqueUid = `{${crypto.randomUUID().toUpperCase()}}`;
 
     xmlStream.openXml(XmlStream.StdDocAttributes);
     xmlStream.openNode(this.tag, {
@@ -272,7 +271,7 @@ class PivotTableXform extends BaseXform {
    * Render loaded pivot table (preserving original structure)
    */
   private renderLoaded(xmlStream: any, model: ParsedPivotTableModel): void {
-    const uniqueUid = model.uid || `{${uuidv4().toUpperCase()}}`;
+    const uniqueUid = model.uid || `{${crypto.randomUUID().toUpperCase()}}`;
 
     xmlStream.openXml(XmlStream.StdDocAttributes);
     xmlStream.openNode(this.tag, {
