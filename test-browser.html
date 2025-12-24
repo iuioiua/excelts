@@ -126,7 +126,11 @@
     function log(msg, type = 'info') {
       const time = new Date().toLocaleTimeString();
       const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#9ca3af';
-      logEl.innerHTML += `<span style="color:${color}">[${time}] ${msg}</span>\n`;
+      const span = document.createElement('span');
+      span.style.color = color;
+      span.textContent = `[${time}] ${msg}`;
+      logEl.appendChild(span);
+      logEl.appendChild(document.createTextNode('\n'));
       logEl.scrollTop = logEl.scrollHeight;
       console.log(msg);
     }
@@ -212,7 +216,8 @@
         result.innerHTML = '<span class="success">✅ Downloaded!</span>';
         log('Excel file created and downloaded!', 'success');
       } catch (err) {
-        result.innerHTML = `<span class="error">❌ ${err.message}</span>`;
+        result.textContent = '❌ ' + err.message;
+        result.className = 'error';
         log(`Error: ${err.message}`, 'error');
       }
     };
@@ -259,7 +264,8 @@
         result.innerHTML = html;
         log('File read successfully!', 'success');
       } catch (err) {
-        result.innerHTML = `<span class="error">❌ ${err.message}</span>`;
+        result.textContent = '❌ ' + err.message;
+        result.className = 'error';
         log(`Error: ${err.message}`, 'error');
       }
     };
@@ -297,7 +303,8 @@
         result.innerHTML = `<span class="success">✅ Downloaded! (${protectTime}ms)</span>`;
         log('Protected Excel created!', 'success');
       } catch (err) {
-        result.innerHTML = `<span class="error">❌ ${err.message}</span>`;
+        result.textContent = '❌ ' + err.message;
+        result.className = 'error';
         log(`Error: ${err.message}`, 'error');
       }
     };
@@ -353,7 +360,8 @@
           log('Roundtrip test failed!', 'error');
         }
       } catch (err) {
-        result.innerHTML = `<span class="error">❌ ${err.message}</span>`;
+        result.textContent = '❌ ' + err.message;
+        result.className = 'error';
         log(`Error: ${err.stack}`, 'error');
       }
     };
