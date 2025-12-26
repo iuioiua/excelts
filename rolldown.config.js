@@ -1,7 +1,6 @@
 import { defineConfig } from "rolldown";
 import fs from "fs";
 import path from "path";
-import { visualizer } from "rollup-plugin-visualizer";
 
 const pkg = JSON.parse(fs.readFileSync("./package.json", "utf-8"));
 const banner = `/*!
@@ -10,18 +9,6 @@ const banner = `/*!
  * (c) ${new Date().getFullYear()} ${pkg.author.name}
  * Released under the ${pkg.license} License
  */`;
-
-const createAnalyzePlugin = (filename, open = false) =>
-  process.env.ANALYZE
-    ? [
-        visualizer({
-          filename,
-          open,
-          gzipSize: true,
-          brotliSize: true
-        })
-      ]
-    : [];
 
 // Browser alias - redirect Node.js modules to browser-specific implementations
 // Use absolute paths for both find and replacement
@@ -76,7 +63,7 @@ export default defineConfig([
       banner,
       entryFileNames: "excelts.esm.js"
     },
-    plugins: [copyLicensePlugin, ...createAnalyzePlugin("./dist/stats-esm.html")]
+    plugins: [copyLicensePlugin]
   },
   // Browser ESM minified: excelts.esm.min.js
   {
@@ -88,8 +75,7 @@ export default defineConfig([
       banner,
       minify: true,
       entryFileNames: "excelts.esm.min.js"
-    },
-    plugins: createAnalyzePlugin("./dist/stats-esm-min.html")
+    }
   },
   // Browser IIFE: excelts.iife.js (for development/debugging with <script> tag)
   {
@@ -102,8 +88,7 @@ export default defineConfig([
       banner,
       exports: "named",
       entryFileNames: "excelts.iife.js"
-    },
-    plugins: createAnalyzePlugin("./dist/stats-iife.html")
+    }
   },
   // Browser: excelts.iife.min.js (for production with <script> tag)
   {
@@ -117,7 +102,6 @@ export default defineConfig([
       exports: "named",
       minify: true,
       entryFileNames: "excelts.iife.min.js"
-    },
-    plugins: createAnalyzePlugin("./dist/stats-iife-min.html", true)
+    }
   }
 ]);
