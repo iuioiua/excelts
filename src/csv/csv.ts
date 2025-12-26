@@ -19,11 +19,7 @@ import {
   type CsvReadOptions,
   type CsvWriteOptions
 } from "./csv.base";
-import {
-  CsvParserStream,
-  CsvFormatterStream,
-  type CsvFormatterStreamOptions
-} from "./csv-stream";
+import { CsvParserStream, CsvFormatterStream, type CsvFormatterStreamOptions } from "./csv-stream";
 import type { Workbook } from "../doc/workbook";
 import type { Worksheet } from "../doc/worksheet";
 
@@ -85,12 +81,9 @@ class CSV {
   async read(stream: Readable, options?: CsvReadOptions): Promise<Worksheet> {
     const worksheet = this.workbook.addWorksheet(options?.sheetName);
 
-    const dateFormats = options?.dateFormats || [
-      "YYYY-MM-DD[T]HH:mm:ssZ",
-      "YYYY-MM-DD[T]HH:mm:ss",
-      "MM-DD-YYYY",
-      "YYYY-MM-DD"
-    ];
+    const dateFormats =
+      options?.dateFormats ??
+      (["YYYY-MM-DD[T]HH:mm:ssZ", "YYYY-MM-DD[T]HH:mm:ss", "MM-DD-YYYY", "YYYY-MM-DD"] as const);
 
     const map = options?.map || createDefaultValueMapper(dateFormats);
 
@@ -269,12 +262,9 @@ class CSV {
   createWriteStream(options?: CsvReadOptions): Writable {
     const worksheet = this.workbook.addWorksheet(options?.sheetName);
 
-    const dateFormats = options?.dateFormats || [
-      "YYYY-MM-DD[T]HH:mm:ssZ",
-      "YYYY-MM-DD[T]HH:mm:ss",
-      "MM-DD-YYYY",
-      "YYYY-MM-DD"
-    ];
+    const dateFormats =
+      options?.dateFormats ??
+      (["YYYY-MM-DD[T]HH:mm:ssZ", "YYYY-MM-DD[T]HH:mm:ss", "MM-DD-YYYY", "YYYY-MM-DD"] as const);
 
     const map = options?.map || createDefaultValueMapper(dateFormats);
 

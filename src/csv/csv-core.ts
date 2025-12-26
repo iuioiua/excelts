@@ -4,7 +4,7 @@
  * A lightweight, cross-platform CSV implementation that works in both
  * Node.js and Browser environments with zero dependencies.
  *
- * Compatible with fast-csv API for drop-in replacement.
+ * High-performance RFC 4180 compliant CSV parser and formatter.
  *
  * @see https://tools.ietf.org/html/rfc4180
  */
@@ -52,7 +52,7 @@ export interface RowValidationResult<T = Row> {
 }
 
 /**
- * CSV parsing options - compatible with fast-csv
+ * CSV parsing options
  */
 export interface CsvParseOptions {
   /** Field delimiter (default: ",") */
@@ -61,9 +61,9 @@ export interface CsvParseOptions {
   quote?: string | false | null;
   /** Escape character for quotes (default: '"'), set to false or null to disable */
   escape?: string | false | null;
-  /** Skip empty lines (default: false) - same as fast-csv ignoreEmpty */
+  /** Skip empty lines (default: false) */
   skipEmptyLines?: boolean;
-  /** Alias for skipEmptyLines for fast-csv compatibility */
+  /** Alias for skipEmptyLines */
   ignoreEmpty?: boolean;
   /** Trim whitespace from both sides of fields (default: false) */
   trim?: boolean;
@@ -143,7 +143,7 @@ export interface CsvParseOptions {
 }
 
 /**
- * CSV formatting options - compatible with fast-csv
+ * CSV formatting options
  */
 export interface CsvFormatOptions {
   /** Field delimiter (default: ",") */
@@ -152,7 +152,7 @@ export interface CsvFormatOptions {
   quote?: string | false | null;
   /** Escape character (default: same as quote) */
   escape?: string | false | null;
-  /** Row delimiter (default: "\n" for fast-csv compatibility) */
+  /** Row delimiter (default: "\n") */
   rowDelimiter?: string;
   /** Always quote all fields (default: false, only quote when necessary) */
   alwaysQuote?: boolean;
@@ -392,7 +392,7 @@ export function parseCsv(
           });
           return false;
         } else {
-          // Default: trim extra columns (matches fast-csv default behavior)
+          // Default: trim extra columns
           row.length = headerRow.length;
         }
       } else if (actualCols < expectedCols) {

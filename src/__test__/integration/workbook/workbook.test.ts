@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { testUtils } from "../../utils/index";
 import { testFilePath, testDataPath } from "../../utils/test-file-helper";
-import { Workbook } from "../../../index";
+import { Workbook, type CsvStreamReadOptions } from "../../../index";
 import { ValueType } from "../../../doc/enums";
 
 const TEST_XLSX_FILE_NAME = testFilePath("workbook.test");
@@ -467,7 +467,7 @@ describe("Workbook", () => {
           quote: false
         }
       };
-      const readOptions = {
+      const readOptions: CsvStreamReadOptions = {
         dateFormats: ["DD/MM/YYYY HH:mm:ss"],
         sheetName: "sheet1",
         parserOptions: {

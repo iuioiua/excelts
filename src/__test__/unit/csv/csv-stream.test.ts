@@ -1026,3 +1026,687 @@ describe("CSV Stream - Backpressure", () => {
     expect(drainCount).toBeGreaterThanOrEqual(0);
   });
 });
+
+// =============================================================================
+// Additional Streaming Options Tests
+// =============================================================================
+
+import { parseCsvStream } from "../../../csv/csv-core";
+
+describe("CSV Stream - Parser Options", () => {
+  it("should support ltrim in streaming", async () => {
+    const input = "  a,  b\n  1,  2";
+    const rows: any[] = [];
+    for await (const row of parseCsvStream(input, { ltrim: true })) {
+      rows.push(row);
+    }
+    expect(rows).toEqual([
+      ["a", "b"],
+      ["1", "2"]
+    ]);
+  });
+
+  it("should support rtrim in streaming", async () => {
+    const input = "a  ,b  \n1  ,2  ";
+    const rows: any[] = [];
+    for await (const row of parseCsvStream(input, { rtrim: true })) {
+      rows.push(row);
+    }
+    expect(rows).toEqual([
+      ["a", "b"],
+      ["1", "2"]
+    ]);
+  });
+
+  it("should support skipRows in streaming", async () => {
+    const input = "a,b\n1,2\n3,4\n5,6";
+    const rows: any[] = [];
+    for await (const row of parseCsvStream(input, { headers: true, skipRows: 1 })) {
+      rows.push(row);
+    }
+    expect(rows).toEqual([
+      { a: "3", b: "4" },
+      { a: "5", b: "6" }
+    ]);
+  });
+
+  it("should support renameHeaders in streaming", async () => {
+    const input = "old1,old2\nval1,val2";
+    const rows: any[] = [];
+    for await (const row of parseCsvStream(input, {
+      headers: ["new1", "new2"],
+      renameHeaders: true
+    })) {
+      rows.push(row);
+    }
+    expect(rows).toEqual([{ new1: "val1", new2: "val2" }]);
+  });
+
+  it("should support ignoreEmpty in streaming", async () => {
+    const input = "a,b\n\n1,2\n\n3,4";
+    const rows: any[] = [];
+    for await (const row of parseCsvStream(input, { ignoreEmpty: true })) {
+      rows.push(row);
+    }
+    expect(rows).toEqual([
+      ["a", "b"],
+      ["1", "2"],
+      ["3", "4"]
+    ]);
+  });
+
+  it("should support strictColumnHandling in streaming (skip invalid)", async () => {
+    const input = "a,b\n1,2,3\n4,5";
+    const rows: any[] = [];
+    for await (const row of parseCsvStream(input, {
+      headers: true,
+      strictColumnHandling: true
+    })) {
+      rows.push(row);
+    }
+    expect(rows).toEqual([{ a: "4", b: "5" }]);
+  });
+
+  it("should support discardUnmappedColumns in streaming", async () => {
+    const input = "a,b\n1,2,extra";
+    const rows: any[] = [];
+    for await (const row of parseCsvStream(input, {
+      headers: true,
+      discardUnmappedColumns: true
+    })) {
+      rows.push(row);
+    }
+    expect(rows).toEqual([{ a: "1", b: "2" }]);
+  });
+});
+
+describe("CSV Stream - Transform Function (CsvParserStream)", () => {
+  const collectRows = (parser: CsvParserStream): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const rows: any[] = [];
+      parser.on("data", (row: any) => rows.push(row));
+      parser.on("end", () => resolve(rows));
+      parser.on("error", reject);
+    });
+  };
+
+  it("should support sync transform", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.transform((row: Record<string, string>) => ({
+      firstName: row.first_name?.toUpperCase(),
+      lastName: row.last_name?.toUpperCase()
+    }));
+
+    const input = "first_name,last_name\nbob,yukon\nsally,yukon";
+    parser.end(input);
+
+    const rows = await collectRows(parser);
+    expect(rows).toEqual([
+      { firstName: "BOB", lastName: "YUKON" },
+      { firstName: "SALLY", lastName: "YUKON" }
+    ]);
+  });
+
+  it("should support async transform", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.transform((row: Record<string, string>, cb: (err: Error | null, row?: any) => void) => {
+      setImmediate(() => {
+        cb(null, {
+          firstName: row.first_name?.toUpperCase(),
+          lastName: row.last_name?.toUpperCase()
+        });
+      });
+    });
+
+    const input = "first_name,last_name\nalice,smith";
+    parser.end(input);
+
+    const rows = await collectRows(parser);
+    expect(rows).toEqual([{ firstName: "ALICE", lastName: "SMITH" }]);
+  });
+
+  it("should handle transform returning null to skip row", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.transform((row: Record<string, string>) => {
+      if (row.skip === "true") {
+        return null;
+      }
+      return row;
+    });
+
+    const input = "name,skip\nalice,false\nbob,true\ncharlie,false";
+    parser.end(input);
+
+    const rows = await collectRows(parser);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].name).toBe("alice");
+    expect(rows[1].name).toBe("charlie");
+  });
+
+  it("should handle transform errors", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.transform(() => {
+      throw new Error("Transform error!");
+    });
+
+    const input = "a,b\n1,2";
+    parser.end(input);
+
+    await expect(collectRows(parser)).rejects.toThrow("Transform error!");
+  });
+
+  it("should throw if transform is not a function", () => {
+    const parser = new CsvParserStream();
+    expect(() => parser.transform("not a function" as any)).toThrow(
+      "The transform should be a function"
+    );
+  });
+});
+
+describe("CSV Stream - Validate Function (CsvParserStream)", () => {
+  const collectRowsAndInvalid = (
+    parser: any
+  ): Promise<{ rows: any[]; invalid: Array<{ row: any; reason?: string }> }> => {
+    return new Promise((resolve, reject) => {
+      const rows: any[] = [];
+      const invalid: Array<{ row: any; reason?: string }> = [];
+
+      parser.on("data", (row: any) => rows.push(row));
+      parser.on("data-invalid", (row: any, reason?: string) => invalid.push({ row, reason }));
+      parser.on("end", () => resolve({ rows, invalid }));
+      parser.on("error", reject);
+    });
+  };
+
+  it("should support sync validate", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.validate((row: Record<string, string>) => {
+      return parseInt(row.age || "0", 10) >= 18;
+    });
+
+    const input = "name,age\nalice,25\nbob,15\ncharlie,30";
+
+    const promise = collectRowsAndInvalid(parser);
+    parser.end(input);
+
+    const { rows, invalid } = await promise;
+    expect(rows).toHaveLength(2);
+    expect(rows[0].name).toBe("alice");
+    expect(rows[1].name).toBe("charlie");
+    expect(invalid).toHaveLength(1);
+    expect(invalid[0].row.name).toBe("bob");
+  });
+
+  it("should support async validate", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.validate(
+      (row: Record<string, string>, cb: (err: Error | null, isValid?: boolean) => void) => {
+        setImmediate(() => {
+          cb(null, row.name !== "bob");
+        });
+      }
+    );
+
+    const input = "name\nalice\nbob\ncharlie";
+
+    const promise = collectRowsAndInvalid(parser);
+    parser.end(input);
+
+    const { rows, invalid } = await promise;
+    expect(rows).toHaveLength(2);
+    expect(invalid).toHaveLength(1);
+  });
+
+  it("should support validate with reason", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.validate(
+      (
+        row: Record<string, string>,
+        cb: (err: Error | null, isValid?: boolean, reason?: string) => void
+      ) => {
+        if (row.name === "bob") {
+          cb(null, false, "Bob is not allowed");
+        } else {
+          cb(null, true);
+        }
+      }
+    );
+
+    const input = "name\nalice\nbob";
+
+    const promise = collectRowsAndInvalid(parser);
+    parser.end(input);
+
+    const { rows, invalid } = await promise;
+    expect(rows).toHaveLength(1);
+    expect(invalid).toHaveLength(1);
+    expect(invalid[0].reason).toBe("Bob is not allowed");
+  });
+
+  it("should handle validate errors", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    parser.validate(() => {
+      throw new Error("Validation error!");
+    });
+
+    const input = "a\n1";
+    parser.end(input);
+
+    await expect(collectRowsAndInvalid(parser)).rejects.toThrow("Validation error!");
+  });
+
+  it("should throw if validate is not a function", () => {
+    const parser = new CsvParserStream();
+    // @ts-expect-error Testing runtime type check with invalid argument
+    expect(() => parser.validate("not a function")).toThrow("The validate should be a function");
+  });
+});
+
+describe("CSV Stream - objectMode Option", () => {
+  it("should emit objects by default (objectMode: true)", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => {
+      expect(typeof row).toBe("object");
+      rows.push(row);
+    });
+
+    const endPromise = new Promise<void>(resolve => parser.on("end", resolve));
+    parser.end("name,age\nalice,30");
+
+    await endPromise;
+    expect(rows[0]).toEqual({ name: "alice", age: "30" });
+  });
+
+  it("should emit JSON strings when objectMode is false", async () => {
+    const parser = new CsvParserStream({ headers: true, objectMode: false });
+    const rows: string[] = [];
+
+    parser.on("data", (chunk: Buffer | string) => {
+      const str = typeof chunk === "string" ? chunk : chunk.toString("utf8");
+      rows.push(str);
+    });
+
+    const endPromise = new Promise<void>(resolve => parser.on("end", resolve));
+    parser.end("name,age\nalice,30");
+
+    await endPromise;
+    expect(JSON.parse(rows[0])).toEqual({ name: "alice", age: "30" });
+  });
+
+  it("formatter should accept objects by default", async () => {
+    const formatter = new CsvFormatterStream({ headers: ["name", "age"] });
+    const chunks: string[] = [];
+
+    formatter.on("data", (chunk: string) => chunks.push(chunk));
+    formatter.write({ name: "alice", age: "30" });
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+    const output = chunks.join("");
+    expect(output).toContain("alice");
+    expect(output).toContain("30");
+  });
+});
+
+describe("CSV Stream - Transform Function (CsvFormatterStream)", () => {
+  it("should support sync transform on formatter", async () => {
+    const formatter = new CsvFormatterStream({
+      headers: ["name", "age"]
+    });
+
+    formatter.transform((row: Record<string, string>) => ({
+      name: row.name?.toUpperCase(),
+      age: row.age
+    }));
+
+    const chunks: string[] = [];
+    formatter.on("data", (chunk: string) => chunks.push(chunk));
+
+    formatter.write({ name: "alice", age: "30" });
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+    const output = chunks.join("");
+    expect(output).toContain("ALICE");
+  });
+
+  it("should support async transform on formatter", async () => {
+    const formatter = new CsvFormatterStream({
+      headers: ["name"]
+    });
+
+    formatter.transform(
+      (row: Record<string, string>, cb: (err: Error | null, row?: any) => void) => {
+        setImmediate(() => {
+          cb(null, { name: row.name?.toUpperCase() });
+        });
+      }
+    );
+
+    const chunks: string[] = [];
+    formatter.on("data", (chunk: string) => chunks.push(chunk));
+
+    formatter.write({ name: "bob" });
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+    const output = chunks.join("");
+    expect(output).toContain("BOB");
+  });
+
+  it("should skip row when transform returns null", async () => {
+    const formatter = new CsvFormatterStream({
+      headers: ["name"]
+    });
+
+    formatter.transform((row: Record<string, string>) => {
+      if (row.name === "skip") {
+        return null;
+      }
+      return row;
+    });
+
+    const chunks: string[] = [];
+    formatter.on("data", (chunk: string) => chunks.push(chunk));
+
+    formatter.write({ name: "alice" });
+    formatter.write({ name: "skip" });
+    formatter.write({ name: "bob" });
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+    const output = chunks.join("");
+    expect(output).toContain("alice");
+    expect(output).toContain("bob");
+    expect(output).not.toContain("skip");
+  });
+
+  it("should throw if transform is not a function", () => {
+    const formatter = new CsvFormatterStream();
+    // @ts-expect-error Testing runtime type check with invalid argument
+    expect(() => formatter.transform("not a function")).toThrow(
+      "The transform should be a function"
+    );
+  });
+});
+
+describe("CSV Stream - Combined Transform and Validate", () => {
+  it("should apply transform before validate", async () => {
+    const parser = new CsvParserStream({ headers: true });
+
+    parser.transform((row: Record<string, string>) => ({
+      ...row,
+      fullName: `${row.first} ${row.last}`
+    }));
+
+    parser.validate((row: Record<string, string>) => {
+      return row.fullName?.length > 5;
+    });
+
+    const rows: any[] = [];
+    const invalid: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+    parser.on("data-invalid", (row: any) => invalid.push(row));
+
+    parser.end("first,last\nBob,Yu\nAlice,Smith");
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0].fullName).toBe("Bob Yu");
+    expect(rows[1].fullName).toBe("Alice Smith");
+  });
+});
+
+describe("CSV Stream - Encoding Option", () => {
+  it("should use default encoding (utf8)", async () => {
+    const parser = new CsvParserStream();
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+    parser.end("名前,年齢\nAlice,30");
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual(["名前", "年齢"]);
+    expect(rows[1]).toEqual(["Alice", "30"]);
+  });
+
+  it("should accept custom encoding option", async () => {
+    const parser = new CsvParserStream({ encoding: "utf8" });
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+    parser.end("a,b\n1,2");
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toHaveLength(2);
+  });
+
+  it("should handle Buffer input with encoding", async () => {
+    const parser = new CsvParserStream({ encoding: "utf8" });
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+
+    const buffer = Buffer.from("你好,世界\n1,2", "utf8");
+    parser.end(buffer);
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual(["你好", "世界"]);
+  });
+});
+
+describe("CSV Stream - Streaming Edge Cases", () => {
+  it("should handle empty stream", async () => {
+    const parser = new CsvParserStream();
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+    parser.end("");
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toHaveLength(0);
+  });
+
+  it("should handle stream with only header (with trailing newline)", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+    parser.end("a,b,c\n");
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toHaveLength(0);
+  });
+
+  it("should emit headers event when parsing with headers: true", async () => {
+    const parser = new CsvParserStream({ headers: true });
+    let headers: string[] | null = null;
+
+    parser.on("headers", (h: string[]) => {
+      headers = h;
+    });
+    parser.on("data", () => {});
+    const endPromise = new Promise<void>(resolve => parser.on("end", resolve));
+    parser.end("name,age\nAlice,30");
+
+    await endPromise;
+
+    expect(headers).toEqual(["name", "age"]);
+  });
+
+  it("should emit headers event with header transform function", async () => {
+    const parser = new CsvParserStream({
+      headers: (h: string[]) => h.map(header => header.toUpperCase())
+    });
+    let headers: string[] | null = null;
+
+    parser.on("headers", (h: string[]) => {
+      headers = h;
+    });
+    parser.on("data", () => {});
+    const endPromise = new Promise<void>(resolve => parser.on("end", resolve));
+    parser.end("name,age\nAlice,30");
+
+    await endPromise;
+
+    expect(headers).toEqual(["NAME", "AGE"]);
+  });
+
+  it("should emit headers event with provided headers array", async () => {
+    const parser = new CsvParserStream({ headers: ["col1", "col2"] });
+    let headers: string[] | null = null;
+
+    parser.on("headers", (h: string[]) => {
+      headers = h;
+    });
+    parser.on("data", () => {});
+    const endPromise = new Promise<void>(resolve => parser.on("end", resolve));
+    parser.end("a,b\n1,2");
+
+    await endPromise;
+
+    expect(headers).toEqual(["col1", "col2"]);
+  });
+
+  it("should emit headers event with renameHeaders", async () => {
+    const parser = new CsvParserStream({
+      headers: ["newName", "newAge"],
+      renameHeaders: true
+    });
+    let headers: string[] | null = null;
+
+    parser.on("headers", (h: string[]) => {
+      headers = h;
+    });
+    parser.on("data", () => {});
+    const endPromise = new Promise<void>(resolve => parser.on("end", resolve));
+    parser.end("name,age\nAlice,30");
+
+    await endPromise;
+
+    expect(headers).toEqual(["newName", "newAge"]);
+  });
+
+  it("should handle formatter with no rows written", async () => {
+    const formatter = new CsvFormatterStream({ headers: ["a", "b"] });
+    const chunks: string[] = [];
+
+    formatter.on("data", (chunk: any) => chunks.push(chunk.toString()));
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+
+    expect(chunks.join("")).toBe("");
+  });
+
+  it("should handle formatter with alwaysWriteHeaders and no rows", async () => {
+    const formatter = new CsvFormatterStream({
+      headers: ["a", "b"],
+      alwaysWriteHeaders: true
+    });
+    const chunks: string[] = [];
+
+    formatter.on("data", (chunk: any) => chunks.push(chunk.toString()));
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+
+    expect(chunks.join("")).toBe("a,b");
+  });
+
+  it("should handle includeEndRowDelimiter with streaming", async () => {
+    const formatter = new CsvFormatterStream({
+      includeEndRowDelimiter: true
+    });
+    const chunks: string[] = [];
+
+    formatter.on("data", (chunk: any) => chunks.push(chunk.toString()));
+
+    formatter.write(["a", "b"]);
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+
+    expect(chunks.join("")).toBe("a,b\n");
+  });
+
+  it("should handle chunked input correctly", async () => {
+    const parser = new CsvParserStream();
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+
+    parser.write("a,");
+    parser.write("b\n");
+    parser.write("1,");
+    parser.write("2");
+    parser.end();
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toEqual([
+      ["a", "b"],
+      ["1", "2"]
+    ]);
+  });
+
+  it("should handle chunked quoted field", async () => {
+    const parser = new CsvParserStream();
+    const rows: any[] = [];
+
+    parser.on("data", (row: any) => rows.push(row));
+
+    parser.write('"hel');
+    parser.write("lo, wor");
+    parser.write('ld",test');
+    parser.end();
+
+    await new Promise<void>(resolve => parser.on("end", resolve));
+
+    expect(rows).toEqual([["hello, world", "test"]]);
+  });
+
+  it("should handle writeHeaders: false with streaming formatter", async () => {
+    const formatter = new CsvFormatterStream({
+      headers: ["a", "b"],
+      writeHeaders: false
+    });
+    const chunks: string[] = [];
+
+    formatter.on("data", (chunk: any) => chunks.push(chunk.toString()));
+
+    formatter.write(["1", "2"]);
+    formatter.write(["3", "4"]);
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+
+    expect(chunks.join("")).toBe("1,2\n3,4");
+  });
+
+  it("should handle rowDelimiter with streaming formatter", async () => {
+    const formatter = new CsvFormatterStream({ rowDelimiter: "\r\n" });
+    const chunks: string[] = [];
+
+    formatter.on("data", (chunk: any) => chunks.push(chunk.toString()));
+
+    formatter.write(["a", "b"]);
+    formatter.write(["1", "2"]);
+    formatter.end();
+
+    await new Promise<void>(resolve => formatter.on("finish", resolve));
+
+    expect(chunks.join("")).toBe("a,b\r\n1,2");
+  });
+});

@@ -670,7 +670,7 @@ export class CsvFormatterStream extends Transform {
     const formattedRow = fields.join(this.delimiter);
 
     // Use row delimiter as prefix (except for first row)
-    // This matches fast-csv behavior where rowDelimiter separates rows
+    // rowDelimiter separates rows, no trailing delimiter by default
     if (this.rowCount === 0) {
       this.rowCount++;
       return formattedRow;

@@ -153,7 +153,7 @@ describe("CSV Base - Worksheet Integration", () => {
     it("should parse custom date format", () => {
       const csv = "24/12/2024";
       const worksheet = parseCsvToWorksheet(csv, workbook, {
-        dateFormats: ["DD/MM/YYYY"]
+        dateFormats: ["DD-MM-YYYY"]
       });
 
       const value = worksheet.getCell("A1").value as Date;
@@ -166,7 +166,7 @@ describe("CSV Base - Worksheet Integration", () => {
     it("should try multiple date formats", () => {
       const csv = "2024-12-24,12/24/2024";
       const worksheet = parseCsvToWorksheet(csv, workbook, {
-        dateFormats: ["YYYY-MM-DD", "MM/DD/YYYY"]
+        dateFormats: ["YYYY-MM-DD", "MM-DD-YYYY"]
       });
 
       const value1 = worksheet.getCell("A1").value as Date;

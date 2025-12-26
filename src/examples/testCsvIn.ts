@@ -1,4 +1,4 @@
-import { Workbook, ValueType } from "../index";
+import { Workbook, ValueType, type CsvStreamReadOptions } from "../index";
 
 const filename = process.argv[2];
 
@@ -56,7 +56,7 @@ const assertDate = function (address, cell, expected) {
   );
 };
 
-const options = {
+const options: CsvStreamReadOptions = {
   dateFormats: ["DD/MM/YYYY HH:mm:ss"]
 };
 

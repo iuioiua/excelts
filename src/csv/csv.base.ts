@@ -2,27 +2,21 @@
  * CSV Base class - Shared functionality for Node.js and Browser
  *
  * Uses native CSV parser (RFC 4180 compliant) with zero external dependencies.
- * Date parsing uses dayjs for format flexibility.
+ * Date parsing uses native high-performance datetime utilities.
  */
 
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat.js";
-import utc from "dayjs/plugin/utc.js";
+import { DateParser, DateFormatter, type DateFormat } from "../utils/datetime";
 import { parseCsv, formatCsv, type CsvParseOptions, type CsvFormatOptions } from "./csv-core";
 import type { Workbook } from "../doc/workbook";
 import type { Worksheet } from "../doc/worksheet";
 import type { CellErrorValue } from "../types";
-
-// Initialize dayjs plugins
-dayjs.extend(customParseFormat);
-dayjs.extend(utc);
 
 /**
  * CSV read options
  */
 export interface CsvReadOptions {
   /** Date format strings to try when parsing (default: ISO formats) */
-  dateFormats?: string[];
+  dateFormats?: readonly DateFormat[];
   /** Custom value mapper function */
   map?(value: any, index: number): any;
   /** Worksheet name to create (default: "Sheet1") */
@@ -69,7 +63,9 @@ const SpecialValues: Record<string, boolean | CellErrorValue> = {
 /**
  * Create the default value mapper for CSV parsing
  */
-export function createDefaultValueMapper(dateFormats: string[]) {
+export function createDefaultValueMapper(dateFormats: readonly DateFormat[]) {
+  const dateParser = DateParser.create(dateFormats);
+
   return function mapValue(datum: any): any {
     if (datum === "") {
       return null;
@@ -82,19 +78,9 @@ export function createDefaultValueMapper(dateFormats: string[]) {
     }
 
     // Try to parse as date
-    const dt = dateFormats.reduce((matchingDate: dayjs.Dayjs | null, currentDateFormat: string) => {
-      if (matchingDate) {
-        return matchingDate;
-      }
-      const dayjsObj = dayjs(datum, currentDateFormat, true);
-      if (dayjsObj.isValid()) {
-        return dayjsObj;
-      }
-      return null;
-    }, null);
-
-    if (dt) {
-      return new Date(dt.valueOf());
+    const date = dateParser.parse(datum);
+    if (date) {
+      return date;
     }
 
     // Check for special values
@@ -111,6 +97,10 @@ export function createDefaultValueMapper(dateFormats: string[]) {
  * Create the default value mapper for CSV writing
  */
 export function createDefaultWriteMapper(dateFormat?: string, dateUTC?: boolean) {
+  const formatter = dateFormat
+    ? DateFormatter.create(dateFormat, { utc: dateUTC })
+    : DateFormatter.iso(dateUTC);
+
   return function mapValue(value: any): any {
     if (value) {
       // Handle hyperlinks
@@ -125,10 +115,7 @@ export function createDefaultWriteMapper(dateFormat?: string, dateUTC?: boolean)
 
       // Handle dates
       if (value instanceof Date) {
-        if (dateFormat) {
-          return dateUTC ? dayjs.utc(value).format(dateFormat) : dayjs(value).format(dateFormat);
-        }
-        return dateUTC ? dayjs.utc(value).format() : dayjs(value).format();
+        return formatter.format(value);
       }
 
       // Handle errors
@@ -155,10 +142,9 @@ export function parseCsvToWorksheet(
 ): Worksheet {
   const worksheet = workbook.addWorksheet(options.sheetName);
 
-  const dateFormats = options.dateFormats || [
+  const dateFormats: readonly DateFormat[] = options.dateFormats || [
     "YYYY-MM-DD[T]HH:mm:ssZ",
     "YYYY-MM-DD[T]HH:mm:ss",
-    "MM-DD-YYYY",
     "YYYY-MM-DD"
   ];
 
