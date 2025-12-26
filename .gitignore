@@ -1,30 +1,12 @@
-# Logs
-logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-
 # Generated files
 dist
 
 # Test Output Folder
-out/*
-spec/out/*
-
-# Tmp folder
-tmp/*
+out
 
 # IDE
 .idea
-.vscode/
-*.iml
-
-# Coverage
-coverage
-.nyc_output
+.vscode
 
 # Dependencies
 node_modules
@@ -32,15 +14,11 @@ node_modules
 # NPM credentials
 .npmrc
 
-# Test internals
-spec/integration/data/gold
-.disable-test-*
-
 # Mac files
 .DS_Store
 
 # Test generated files
 *.xlsx
-test.xlsx
+
 # Vitest browser screenshots (empty in headless mode)
 __screenshots__
