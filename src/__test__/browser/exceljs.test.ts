@@ -61,7 +61,7 @@ describe("ExcelTS Browser Tests", () => {
 
     // In browser, buffer is Uint8Array; use TextDecoder to convert to string
     const content = new TextDecoder().decode(buffer);
-    // Uses \n as row delimiter (fast-csv compatible), includeEndRowDelimiter defaults to false
+    // Uses \n as row delimiter, includeEndRowDelimiter defaults to false
     expect(content).toEqual('"Hello, World!",What time is it?\n7,12pm');
   });
 
@@ -463,6 +463,188 @@ describe("ExcelTS Browser Tests", () => {
       expect(ws2.getCell("A1").value).toBe(100);
       expect(ws2.getCell("B1").formula).toBe("MyValue * 2");
       expect(ws2.getCell("B1").result).toBe(200);
+    });
+  });
+
+  // =========================================================================
+  // DEFLATE Fallback Tests (simulating old browsers without CompressionStream)
+  // =========================================================================
+  describe("DEFLATE Fallback (simulating old browsers)", () => {
+    it("should work when CompressionStream is disabled", async () => {
+      // Save original APIs
+      const originalCompressionStream = globalThis.CompressionStream;
+      const originalDecompressionStream = globalThis.DecompressionStream;
+
+      // Disable native compression APIs to simulate old browsers
+      globalThis.CompressionStream = undefined;
+      globalThis.DecompressionStream = undefined;
+
+      try {
+        const { Workbook } = ExcelTS;
+        const wb = new Workbook();
+        const ws = wb.addWorksheet("fallback-test");
+
+        // Add various data types
+        ws.getCell("A1").value = "Hello, World!";
+        ws.getCell("A2").value = 12345;
+        ws.getCell("A3").value = new Date("2024-01-01");
+        ws.getCell("A4").value = { formula: "A2*2", result: 24690 };
+
+        // Write using JS fallback compression
+        const buffer = await wb.xlsx.writeBuffer();
+        expect(buffer).toBeTruthy();
+        expect(buffer.byteLength).toBeGreaterThan(0);
+
+        // Read using JS fallback decompression
+        const wb2 = new Workbook();
+        await wb2.xlsx.load(buffer);
+
+        const ws2 = wb2.getWorksheet("fallback-test");
+        expect(ws2).toBeTruthy();
+        expect(ws2!.getCell("A1").value).toBe("Hello, World!");
+        expect(ws2!.getCell("A2").value).toBe(12345);
+        expect(ws2!.getCell("A4").formula).toBe("A2*2");
+      } finally {
+        // Restore original APIs
+        globalThis.CompressionStream = originalCompressionStream;
+        globalThis.DecompressionStream = originalDecompressionStream;
+      }
+    });
+
+    it("should handle large workbook with fallback compression", async () => {
+      const originalCompressionStream = globalThis.CompressionStream;
+      const originalDecompressionStream = globalThis.DecompressionStream;
+
+      globalThis.CompressionStream = undefined;
+      globalThis.DecompressionStream = undefined;
+
+      try {
+        const { Workbook } = ExcelTS;
+        const wb = new Workbook();
+        const ws = wb.addWorksheet("large-data");
+
+        // Create a larger dataset (500 rows)
+        for (let i = 1; i <= 500; i++) {
+          ws.getCell(`A${i}`).value = `Row ${i}`;
+          ws.getCell(`B${i}`).value = i * 100;
+          ws.getCell(`C${i}`).value = `Data ${i} with some repeated text`.repeat(3);
+        }
+
+        const buffer = await wb.xlsx.writeBuffer();
+        expect(buffer.byteLength).toBeGreaterThan(0);
+
+        const wb2 = new Workbook();
+        await wb2.xlsx.load(buffer);
+
+        const ws2 = wb2.getWorksheet("large-data")!;
+        expect(ws2.getCell("A1").value).toBe("Row 1");
+        expect(ws2.getCell("B500").value).toBe(50000);
+        expect(ws2.getCell("A500").value).toBe("Row 500");
+      } finally {
+        globalThis.CompressionStream = originalCompressionStream;
+        globalThis.DecompressionStream = originalDecompressionStream;
+      }
+    });
+
+    it("should handle styles and formatting with fallback", async () => {
+      const originalCompressionStream = globalThis.CompressionStream;
+      const originalDecompressionStream = globalThis.DecompressionStream;
+
+      globalThis.CompressionStream = undefined;
+      globalThis.DecompressionStream = undefined;
+
+      try {
+        const { Workbook } = ExcelTS;
+        const wb = new Workbook();
+        const ws = wb.addWorksheet("styled");
+
+        ws.getCell("A1").value = "Bold Text";
+        ws.getCell("A1").font = { bold: true, size: 14 };
+        ws.getCell("A1").fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFF0000" }
+        };
+
+        ws.getCell("B1").value = 1234.56;
+        ws.getCell("B1").numFmt = "$#,##0.00";
+
+        const buffer = await wb.xlsx.writeBuffer();
+
+        const wb2 = new Workbook();
+        await wb2.xlsx.load(buffer);
+
+        const ws2 = wb2.getWorksheet("styled")!;
+        expect(ws2.getCell("A1").font?.bold).toBe(true);
+        expect(ws2.getCell("B1").numFmt).toBe("$#,##0.00");
+      } finally {
+        globalThis.CompressionStream = originalCompressionStream;
+        globalThis.DecompressionStream = originalDecompressionStream;
+      }
+    });
+
+    it("should read file created with native compression using fallback decompression", async () => {
+      const { Workbook } = ExcelTS;
+
+      // First, create a file with native compression (if available)
+      const wb = new Workbook();
+      const ws = wb.addWorksheet("native-created");
+      ws.getCell("A1").value = "Created with native compression";
+      ws.getCell("A2").value = 42;
+
+      const buffer = await wb.xlsx.writeBuffer();
+
+      // Now disable native APIs and try to read
+      const originalCompressionStream = globalThis.CompressionStream;
+      const originalDecompressionStream = globalThis.DecompressionStream;
+
+      globalThis.CompressionStream = undefined;
+      globalThis.DecompressionStream = undefined;
+
+      try {
+        const wb2 = new Workbook();
+        await wb2.xlsx.load(buffer);
+
+        const ws2 = wb2.getWorksheet("native-created")!;
+        expect(ws2.getCell("A1").value).toBe("Created with native compression");
+        expect(ws2.getCell("A2").value).toBe(42);
+      } finally {
+        globalThis.CompressionStream = originalCompressionStream;
+        globalThis.DecompressionStream = originalDecompressionStream;
+      }
+    });
+
+    it("should create file with fallback that native compression can read", async () => {
+      const { Workbook } = ExcelTS;
+
+      // Disable native APIs
+      const originalCompressionStream = globalThis.CompressionStream;
+      const originalDecompressionStream = globalThis.DecompressionStream;
+
+      globalThis.CompressionStream = undefined;
+      globalThis.DecompressionStream = undefined;
+
+      let buffer: ArrayBuffer;
+      try {
+        const wb = new Workbook();
+        const ws = wb.addWorksheet("fallback-created");
+        ws.getCell("A1").value = "Created with JS fallback";
+        ws.getCell("A2").value = 123;
+
+        buffer = await wb.xlsx.writeBuffer();
+      } finally {
+        // Restore native APIs
+        globalThis.CompressionStream = originalCompressionStream;
+        globalThis.DecompressionStream = originalDecompressionStream;
+      }
+
+      // Now read with native compression restored
+      const wb2 = new Workbook();
+      await wb2.xlsx.load(buffer);
+
+      const ws2 = wb2.getWorksheet("fallback-created")!;
+      expect(ws2.getCell("A1").value).toBe("Created with JS fallback");
+      expect(ws2.getCell("A2").value).toBe(123);
     });
   });
 });

@@ -4,6 +4,9 @@
  *
  * Uses CompressionStream/DecompressionStream API with "deflate-raw" format
  * (raw DEFLATE without zlib header/trailer, required for ZIP files)
+ *
+ * Browser fallback: For browsers without deflate-raw support (Firefox < 113, Safari < 16.4),
+ * see deflate-fallback.ts for pure JS implementation
  */
 
 /**

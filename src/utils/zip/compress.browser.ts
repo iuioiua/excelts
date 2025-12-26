@@ -1,19 +1,58 @@
 /**
- * Browser compression utilities using Web Streams API
+ * Browser compression utilities
  *
- * Uses CompressionStream API (Chrome 80+, Firefox 113+, Safari 16.4+)
- * with "deflate-raw" format (required for ZIP files)
+ * Primary: CompressionStream API (Chrome 103+, Firefox 113+, Safari 16.4+)
+ * Fallback: Pure JS DEFLATE implementation for older browsers
+ *
+ * Supported browsers with fallback:
+ * - Chrome >= 85
+ * - Firefox >= 79
+ * - Safari >= 14
+ * - Edge >= 85
  */
 
-import {
-  type CompressOptions,
-  hasCompressionStream,
-  compressWithStream,
-  decompressWithStream
-} from "./compress.base";
+import { type CompressOptions, compressWithStream, decompressWithStream } from "./compress.base";
+import { inflateRaw, deflateRawCompressed, deflateRawStore } from "./deflate-fallback";
 
-// Re-export shared types and utilities
-export { type CompressOptions, hasCompressionStream };
+// Re-export shared types
+export { type CompressOptions };
+
+/**
+ * Check if CompressionStream with "deflate-raw" is available
+ * Note: Chrome 80-102 has CompressionStream but not deflate-raw support
+ */
+export function hasCompressionStream(): boolean {
+  if (typeof CompressionStream === "undefined") {
+    return false;
+  }
+  // Test if deflate-raw is supported (not just CompressionStream existence)
+  try {
+    new CompressionStream("deflate-raw");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Cache the detection result for performance
+let _hasDeflateRaw: boolean | null = null;
+
+/**
+ * Check if deflate-raw is supported, with caching for performance.
+ * The cache is bypassed if CompressionStream is undefined (for testing).
+ */
+function hasDeflateRawSupport(): boolean {
+  // If API doesn't exist, return false immediately (bypass cache for tests)
+  if (typeof CompressionStream === "undefined") {
+    return false;
+  }
+
+  // Use cached result for performance
+  if (_hasDeflateRaw === null) {
+    _hasDeflateRaw = hasCompressionStream();
+  }
+  return _hasDeflateRaw;
+}
 
 /**
  * Check if native zlib is available (always false in browser)
@@ -23,7 +62,7 @@ export function hasNativeZlib(): boolean {
 }
 
 /**
- * Compress data using browser's native CompressionStream
+ * Compress data using browser's native CompressionStream or JS fallback
  *
  * @param data - Data to compress
  * @param options - Compression options
@@ -41,55 +80,61 @@ export async function compress(
 ): Promise<Uint8Array> {
   const level = options.level ?? 6;
 
-  // Level 0 means no compression
+  // Level 0 means no compression (STORE mode)
   if (level === 0) {
-    return data;
+    return deflateRawStore(data);
   }
 
-  // Use CompressionStream
-  if (typeof CompressionStream !== "undefined") {
+  // Use native CompressionStream if available
+  if (hasDeflateRawSupport()) {
     return compressWithStream(data);
   }
 
-  // No compression available - return original data
-  console.warn("No native compression available, returning uncompressed data");
-  return data;
+  // Fallback to pure JS implementation
+  return deflateRawCompressed(data);
 }
 
 /**
- * Compress data synchronously
- * Not available in browser - throws error
+ * Compress data synchronously using pure JS implementation
  *
- * @param _data - Data to compress
- * @param _options - Compression options
- * @throws Error always - sync compression not available in browser
+ * @param data - Data to compress
+ * @param options - Compression options
+ * @returns Compressed data
  */
-export function compressSync(_data: Uint8Array, _options: { level?: number } = {}): Uint8Array {
-  throw new Error("Synchronous compression is not available in browser environment");
+export function compressSync(data: Uint8Array, options: { level?: number } = {}): Uint8Array {
+  const level = options.level ?? 6;
+
+  // Level 0 means no compression (STORE mode)
+  if (level === 0) {
+    return deflateRawStore(data);
+  }
+
+  // Pure JS implementation
+  return deflateRawCompressed(data);
 }
 
 /**
- * Decompress data using browser's native DecompressionStream
+ * Decompress data using browser's native DecompressionStream or JS fallback
  *
  * @param data - Compressed data (deflate-raw format)
  * @returns Decompressed data
  */
 export async function decompress(data: Uint8Array): Promise<Uint8Array> {
-  // Use DecompressionStream
-  if (typeof DecompressionStream !== "undefined") {
+  // Use native DecompressionStream if available
+  if (hasDeflateRawSupport()) {
     return decompressWithStream(data);
   }
 
-  throw new Error("No native decompression available in browser");
+  // Fallback to pure JS implementation
+  return inflateRaw(data);
 }
 
 /**
- * Decompress data synchronously
- * Not available in browser - throws error
+ * Decompress data synchronously using pure JS implementation
  *
- * @param _data - Compressed data
- * @throws Error always - sync decompression not available in browser
+ * @param data - Compressed data (deflate-raw format)
+ * @returns Decompressed data
  */
-export function decompressSync(_data: Uint8Array): Uint8Array {
-  throw new Error("Synchronous decompression is not available in browser environment");
+export function decompressSync(data: Uint8Array): Uint8Array {
+  return inflateRaw(data);
 }
