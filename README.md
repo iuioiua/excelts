@@ -8,13 +8,14 @@ Modern TypeScript Excel Workbook Manager - Read, manipulate and write spreadshee
 
 ExcelTS is a modernized fork of [ExcelJS](https://github.com/exceljs/exceljs) with:
 
+- 🚀 **Zero Runtime Dependencies** - Pure TypeScript implementation with no external packages
 - ✅ **Full TypeScript Support** - Complete type definitions and modern TypeScript patterns
-- ✅ **Updated Dependencies** - All dependencies upgraded to latest stable versions
 - ✅ **Modern Build System** - Using Rolldown for faster builds
 - ✅ **Enhanced Testing** - Migrated to Vitest with browser testing support
 - ✅ **ESM First** - Native ES Module support with CommonJS compatibility
 - ✅ **Node 20+** - Optimized for modern Node.js versions
 - ✅ **Named Exports** - All exports are named for better tree-shaking
+- ✅ **Broad Browser Support** - Works in Chrome 85+, Firefox 79+, Safari 14+ with built-in polyfills
 
 ## Translations
 
@@ -260,11 +261,11 @@ const url = URL.createObjectURL(blob);
 
 - **Chrome >= 85** (August 2020)
 - **Edge >= 85** (August 2020)
-- **Firefox >= 113** (May 2023)
-- **Safari >= 16.4** (March 2023)
+- **Firefox >= 79** (July 2020)
+- **Safari >= 14** (September 2020)
 - **Opera >= 71** (September 2020)
 
-All modern JavaScript features are natively supported in these versions.
+For older browsers without native `CompressionStream` API (Firefox < 113, Safari < 16.4), ExcelTS automatically uses a built-in pure JavaScript DEFLATE implementation - no configuration or polyfills needed.
 
 ## Maintainer
 

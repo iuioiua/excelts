@@ -8,13 +8,14 @@
 
 ExcelTS 是 [ExcelJS](https://github.com/exceljs/exceljs) 的现代化版本，具有以下特性:
 
+- 🚀 **零运行时依赖** - 纯 TypeScript 实现，无任何外部包依赖
 - ✅ **完整的 TypeScript 支持** - 完整的类型定义和现代 TypeScript 模式
-- ✅ **升级的依赖** - 所有依赖项升级到最新稳定版本
 - ✅ **现代构建系统** - 使用 Rolldown 进行更快的构建
 - ✅ **增强的测试** - 迁移到 Vitest 并支持浏览器测试
 - ✅ **ESM 优先** - 原生 ES Module 支持，兼容 CommonJS
 - ✅ **Node 20+** - 针对现代 Node.js 版本优化
 - ✅ **命名导出** - 所有导出都是命名导出，更好的 tree-shaking
+- ✅ **广泛浏览器支持** - 支持 Chrome 85+、Firefox 79+、Safari 14+，内置兼容方案
 
 ## 翻译
 
@@ -260,11 +261,11 @@ const url = URL.createObjectURL(blob);
 
 - **Chrome >= 85**（2020年8月）
 - **Edge >= 85**（2020年8月）
-- **Firefox >= 113**（2023年5月）
-- **Safari >= 16.4**（2023年3月）
+- **Firefox >= 79**（2020年7月）
+- **Safari >= 14**（2020年9月）
 - **Opera >= 71**（2020年9月）
 
-所有现代 JavaScript 特性在这些版本中都原生支持。
+对于不支持原生 `CompressionStream` API 的旧浏览器（Firefox < 113, Safari < 16.4），ExcelTS 会自动使用内置的纯 JavaScript DEFLATE 实现 - 无需任何配置或 polyfills。
 
 ## 维护者
 
