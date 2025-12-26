@@ -1,32 +1,169 @@
 import { PassThrough } from "stream";
 import { expect } from "vitest";
-import { XMLParser } from "fast-xml-parser";
 import { CompyXform } from "./compy-xform";
 import { parseSax } from "../../../../utils/parse-sax";
 import { XmlStream } from "../../../../utils/xml-stream";
 import { BooleanXform } from "../../../../xlsx/xform/simple/boolean-xform";
 import { cloneDeep } from "../../../../utils/under-dash";
 
-// XML parser configuration for comparison
-const xmlParser = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: "@_",
-  parseTagValue: false,
-  trimValues: false
-});
+/**
+ * Decode XML entities
+ */
+function decodeXmlEntities(str: string): string {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
 
-function normalizeXml(xml: string): string {
-  try {
-    // Parse XML to object (this normalizes element order by converting to object structure)
-    const parsed = xmlParser.parse(xml);
+/**
+ * Simple XML node structure for comparison
+ */
+interface XmlNode {
+  tag: string;
+  attrs: Record<string, string>;
+  children: (XmlNode | string)[];
+}
 
-    // Convert to JSON for comparison - element order doesn't matter in objects
-    return JSON.stringify(parsed, Object.keys(parsed).sort());
-  } catch (error) {
-    // Fallback to string comparison if parsing fails
-    console.warn("XML parsing failed, falling back to string comparison:", error);
-    return xml.replace(/\s+/g, " ").trim();
+/**
+ * Parse XML string into a tree structure for semantic comparison.
+ * This is a simple parser sufficient for test comparison purposes.
+ */
+function parseXmlTree(xml: string): XmlNode | string | null {
+  const trimmed = xml.trim();
+  if (!trimmed) {
+    return null;
   }
+
+  // Handle XML declaration
+  const content = trimmed.replace(/<\?xml[^?]*\?>\s*/g, "");
+
+  const stack: XmlNode[] = [];
+  let root: XmlNode | null = null;
+  let pos = 0;
+
+  while (pos < content.length) {
+    const nextTag = content.indexOf("<", pos);
+    if (nextTag === -1) {
+      // Remaining text
+      const text = decodeXmlEntities(content.slice(pos).trim());
+      if (text && stack.length > 0) {
+        stack[stack.length - 1].children.push(text);
+      }
+      break;
+    }
+
+    // Text before tag
+    if (nextTag > pos) {
+      const text = decodeXmlEntities(content.slice(pos, nextTag).trim());
+      if (text && stack.length > 0) {
+        stack[stack.length - 1].children.push(text);
+      }
+    }
+
+    // Find end of tag
+    const tagEnd = content.indexOf(">", nextTag);
+    if (tagEnd === -1) {
+      break;
+    }
+
+    const tagContent = content.slice(nextTag + 1, tagEnd);
+    pos = tagEnd + 1;
+
+    // Closing tag
+    if (tagContent.startsWith("/")) {
+      stack.pop();
+      continue;
+    }
+
+    // Self-closing tag
+    const selfClosing = tagContent.endsWith("/");
+    const cleanContent = selfClosing ? tagContent.slice(0, -1).trim() : tagContent;
+
+    // Parse tag name and attributes
+    const spaceIdx = cleanContent.search(/\s/);
+    const tagName = spaceIdx === -1 ? cleanContent : cleanContent.slice(0, spaceIdx);
+    const attrStr = spaceIdx === -1 ? "" : cleanContent.slice(spaceIdx);
+
+    const attrs: Record<string, string> = {};
+    const attrRegex = /([\w:-]+)="([^"]*)"/g;
+    let match;
+    while ((match = attrRegex.exec(attrStr))) {
+      attrs[match[1]] = match[2];
+    }
+
+    const node: XmlNode = { tag: tagName, attrs, children: [] };
+
+    if (stack.length > 0) {
+      stack[stack.length - 1].children.push(node);
+    } else {
+      root = node;
+    }
+
+    if (!selfClosing) {
+      stack.push(node);
+    }
+  }
+
+  return root;
+}
+
+/**
+ * Convert XML tree to a canonical form for comparison.
+ * Sorts attributes and children by tag name for consistent comparison.
+ */
+function treeToCanonical(node: XmlNode | string | null): any {
+  if (node === null) {
+    return null;
+  }
+  if (typeof node === "string") {
+    return node;
+  }
+
+  const result: any = { tag: node.tag };
+
+  // Sort attributes
+  const sortedAttrs = Object.keys(node.attrs).sort();
+  if (sortedAttrs.length > 0) {
+    result.attrs = {};
+    for (const key of sortedAttrs) {
+      result.attrs[key] = node.attrs[key];
+    }
+  }
+
+  // Sort and canonicalize children
+  if (node.children.length > 0) {
+    const childNodes = node.children
+      .map(c => treeToCanonical(c))
+      .filter(c => c !== null && c !== "");
+
+    // Sort child elements by tag name (text nodes stay in place conceptually)
+    childNodes.sort((a, b) => {
+      const aTag = typeof a === "string" ? "" : a.tag;
+      const bTag = typeof b === "string" ? "" : b.tag;
+      return aTag.localeCompare(bTag);
+    });
+
+    if (childNodes.length > 0) {
+      result.children = childNodes;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Normalize XML for semantic comparison.
+ */
+function normalizeXml(xml: string): string {
+  if (!xml || !xml.trim()) {
+    return "";
+  }
+  const tree = parseXmlTree(xml);
+  const canonical = treeToCanonical(tree);
+  return JSON.stringify(canonical);
 }
 
 interface Expectation {
