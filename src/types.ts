@@ -784,3 +784,13 @@ export interface RowBreak {
   min?: number;
   man: number;
 }
+
+// ============================================================================
+// Column Break Types
+// ============================================================================
+export interface ColBreak {
+  id: number;
+  max: number;
+  min?: number;
+  man: number;
+}

@@ -30,8 +30,10 @@ import { PictureXform } from "../../xlsx/xform/sheet/picture-xform";
 import { ConditionalFormattingsXform } from "../../xlsx/xform/sheet/cf/conditional-formattings-xform";
 import { HeaderFooterXform } from "../../xlsx/xform/sheet/header-footer-xform";
 import { RowBreaksXform } from "../../xlsx/xform/sheet/row-breaks-xform";
+import { ColBreaksXform } from "../../xlsx/xform/sheet/col-breaks-xform";
 import type {
   RowBreak,
+  ColBreak,
   PageSetup,
   HeaderFooter,
   WorksheetProperties,
@@ -66,7 +68,8 @@ const xform = {
   picture: new PictureXform(),
   conditionalFormattings: new ConditionalFormattingsXform(),
   headerFooter: new HeaderFooterXform(),
-  rowBreaks: new RowBreaksXform()
+  rowBreaks: new RowBreaksXform(),
+  colBreaks: new ColBreaksXform()
 };
 
 // ============================================================================================
@@ -108,6 +111,7 @@ class WorksheetWriter {
   _siFormulae: number;
   conditionalFormatting: ConditionalFormattingOptions[];
   rowBreaks: RowBreak[];
+  colBreaks: ColBreak[];
   properties: Partial<WorksheetProperties> & {
     defaultRowHeight: number;
     dyDescent: number;
@@ -188,6 +192,7 @@ class WorksheetWriter {
 
     // keep a record of all row and column pageBreaks
     this.rowBreaks = [];
+    this.colBreaks = [];
 
     // for default row height, outline levels, etc
     this.properties = Object.assign(
@@ -327,6 +332,7 @@ class WorksheetWriter {
     this._writeBackground();
     this._writeHeaderFooter();
     this._writeRowBreaks();
+    this._writeColBreaks();
 
     // Legacy Data tag for comments
     this._writeLegacyData();
@@ -755,6 +761,10 @@ class WorksheetWriter {
 
   _writeRowBreaks(): void {
     this.stream.write(xform.rowBreaks.toXml(this.rowBreaks));
+  }
+
+  _writeColBreaks(): void {
+    this.stream.write(xform.colBreaks.toXml(this.colBreaks));
   }
 
   _writeDataValidations(): void {

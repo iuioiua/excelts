@@ -22,6 +22,7 @@ import { PictureXform } from "./picture-xform";
 import { DrawingXform } from "./drawing-xform";
 import { TablePartXform } from "./table-part-xform";
 import { RowBreaksXform } from "./row-breaks-xform";
+import { ColBreaksXform } from "./col-breaks-xform";
 import { HeaderFooterXform } from "./header-footer-xform";
 import { ConditionalFormattingsXform } from "./cf/conditional-formattings-xform";
 import { ExtLstXform } from "./ext-lst-xform";
@@ -127,6 +128,7 @@ class WorkSheetXform extends BaseXform {
         childXform: new MergeCellXform()
       }),
       rowBreaks: new RowBreaksXform(),
+      colBreaks: new ColBreaksXform(),
       hyperlinks: new ListXform({
         tag: "hyperlinks",
         count: false,
@@ -364,7 +366,8 @@ class WorkSheetXform extends BaseXform {
     this.map.pageSetup.render(xmlStream, model.pageSetup);
     this.map.headerFooter.render(xmlStream, model.headerFooter);
     this.map.rowBreaks.render(xmlStream, model.rowBreaks);
-    this.map.drawing.render(xmlStream, model.drawing); // Note: must be after rowBreaks
+    this.map.colBreaks.render(xmlStream, model.colBreaks);
+    this.map.drawing.render(xmlStream, model.drawing); // Note: must be after rowBreaks/colBreaks
     this.map.picture.render(xmlStream, model.background); // Note: must be after drawing
     this.map.tableParts.render(xmlStream, model.tables);
 
@@ -455,7 +458,9 @@ class WorkSheetXform extends BaseXform {
           background: this.map.picture.model,
           drawing: this.map.drawing.model,
           tables: this.map.tableParts.model,
-          conditionalFormattings
+          conditionalFormattings,
+          rowBreaks: this.map.rowBreaks.model || [],
+          colBreaks: this.map.colBreaks.model || []
         };
 
         if (this.map.autoFilter.model) {

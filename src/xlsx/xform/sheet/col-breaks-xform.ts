@@ -2,13 +2,19 @@ import { PageBreaksXform } from "./page-breaks-xform";
 import { ListXform } from "../list-xform";
 
 /**
- * Xform for row page breaks (rowBreaks element in worksheet XML)
- * Used to define manual page breaks between rows when printing.
+ * Xform for column page breaks (colBreaks element in worksheet XML)
+ * Used to define manual page breaks between columns when printing.
+ *
+ * XML structure:
+ * <colBreaks count="3" manualBreakCount="3">
+ *   <brk id="3" max="1048575" man="1"/>
+ *   <brk id="6" max="1048575" man="1"/>
+ * </colBreaks>
  */
-class RowBreaksXform extends ListXform {
+class ColBreaksXform extends ListXform {
   constructor() {
     super({
-      tag: "rowBreaks",
+      tag: "colBreaks",
       count: true,
       childXform: new PageBreaksXform()
     });
@@ -30,4 +36,4 @@ class RowBreaksXform extends ListXform {
   }
 }
 
-export { RowBreaksXform };
+export { ColBreaksXform };

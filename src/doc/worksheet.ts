@@ -15,6 +15,7 @@ import type {
   AddImageRange,
   AutoFilter,
   CellValue,
+  ColBreak,
   ConditionalFormattingOptions,
   DataValidation,
   RowBreak,
@@ -117,6 +118,7 @@ interface WorksheetModel {
   pageSetup: PageSetup;
   headerFooter: HeaderFooter;
   rowBreaks: RowBreak[];
+  colBreaks: ColBreak[];
   views: Partial<WorksheetView>[];
   autoFilter: AutoFilter | null;
   media: ImageModel[];
@@ -149,6 +151,7 @@ class Worksheet {
   declare private _keys: { [key: string]: Column };
   declare private _merges: { [key: string]: Range };
   declare public rowBreaks: RowBreak[];
+  declare public colBreaks: ColBreak[];
   declare public properties: Partial<WorksheetProperties>;
   declare public pageSetup: PageSetup;
   declare public headerFooter: HeaderFooter;
@@ -191,6 +194,7 @@ class Worksheet {
 
     // record of all row and column pageBreaks
     this.rowBreaks = [];
+    this.colBreaks = [];
 
     // for tabColor, default row height, outline levels, etc
     this.properties = Object.assign(
@@ -1143,6 +1147,7 @@ class Worksheet {
       pageSetup: this.pageSetup,
       headerFooter: this.headerFooter,
       rowBreaks: this.rowBreaks,
+      colBreaks: this.colBreaks,
       views: this.views,
       autoFilter: this.autoFilter,
       media: this._media.map(medium => medium.model),
@@ -1209,6 +1214,8 @@ class Worksheet {
     this.properties = value.properties;
     this.pageSetup = value.pageSetup;
     this.headerFooter = value.headerFooter;
+    this.rowBreaks = value.rowBreaks || [];
+    this.colBreaks = value.colBreaks || [];
     this.views = value.views;
     this.autoFilter = value.autoFilter;
     this._media = value.media.map(medium => new Image(this, medium));

@@ -38,5 +38,7 @@
   "hyperlinks": null,
   "views": null,
   "tables": null,
-  "conditionalFormattings": []
+  "conditionalFormattings": [],
+  "rowBreaks": [],
+  "colBreaks": []
 }

@@ -12,7 +12,8 @@ import type {
   Protection,
   Borders,
   Fill,
-  CellValue
+  CellValue,
+  ColBreak
 } from "../types";
 
 const DEFAULT_COLUMN_WIDTH = 9;
@@ -305,6 +306,30 @@ class Column {
     v.forEach((value, index) => {
       this._worksheet.getCell(index + offset, colNumber).value = value;
     });
+  }
+
+  // =========================================================================
+  // Page Breaks
+
+  /**
+   * Add a page break after this column.
+   * @param top - Optional top row limit for the page break (1-indexed)
+   * @param bottom - Optional bottom row limit for the page break (1-indexed)
+   */
+  addPageBreak(top?: number, bottom?: number): void {
+    const ws = this._worksheet;
+    const topRow = Math.max(0, (top || 0) - 1) || 0;
+    const bottomRow = Math.max(0, (bottom || 0) - 1) || 1048575;
+    const pb: ColBreak = {
+      id: this._number,
+      max: bottomRow,
+      man: 1
+    };
+    if (topRow) {
+      pb.min = topRow;
+    }
+
+    ws.colBreaks.push(pb);
   }
 
   // =========================================================================

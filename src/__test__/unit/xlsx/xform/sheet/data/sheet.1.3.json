@@ -123,5 +123,7 @@
     "evenFooter": "&Lexcelts&C&F&RPage &P evenHeader"
   },
   "tables": null,
-  "conditionalFormattings": []
+  "conditionalFormattings": [],
+  "rowBreaks": [],
+  "colBreaks": []
 }
