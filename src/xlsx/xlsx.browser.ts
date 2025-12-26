@@ -10,8 +10,7 @@
  * - read/write (no streams)
  */
 
-import type { UnzipFile } from "fflate";
-import { Unzip, UnzipInflate } from "fflate";
+import { ZipParser } from "../utils/unzip/zip-parser";
 import { ZipWriter } from "../utils/zip-stream.browser";
 import { StreamBuf } from "../utils/stream-buf.browser";
 import { bufferToString } from "../utils/utils";
@@ -121,62 +120,17 @@ class XLSX extends XLSXBase {
       buffer = new Uint8Array(data);
     }
 
-    const allFiles: Record<string, Uint8Array> = {};
+    // Use native ZipParser for extraction
+    const parser = new ZipParser(buffer);
+    const allFiles = await parser.extractAll();
 
-    await new Promise<void>((resolve, reject) => {
-      let filesProcessed = 0;
-      let zipEnded = false;
-      let filesStarted = 0;
+    // Convert Map to Record for loadFromFiles
+    const filesRecord: Record<string, Uint8Array> = {};
+    for (const [path, content] of allFiles) {
+      filesRecord[path] = content;
+    }
 
-      const checkCompletion = () => {
-        if (zipEnded && filesProcessed === filesStarted) {
-          resolve();
-        }
-      };
-
-      const unzipper = new Unzip((file: UnzipFile) => {
-        filesStarted++;
-        const fileChunks: Uint8Array[] = [];
-        let totalLength = 0;
-
-        file.ondata = (err, fileData, final) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          if (fileData) {
-            fileChunks.push(fileData);
-            totalLength += fileData.length;
-          }
-          if (final) {
-            if (fileChunks.length === 1) {
-              allFiles[file.name] = fileChunks[0];
-            } else if (fileChunks.length > 1) {
-              const fullData = new Uint8Array(totalLength);
-              let offset = 0;
-              for (const chunk of fileChunks) {
-                fullData.set(chunk, offset);
-                offset += chunk.length;
-              }
-              allFiles[file.name] = fullData;
-            } else {
-              allFiles[file.name] = new Uint8Array(0);
-            }
-            filesProcessed++;
-            fileChunks.length = 0;
-            checkCompletion();
-          }
-        };
-        file.start();
-      });
-
-      unzipper.register(UnzipInflate);
-      unzipper.push(buffer, true);
-      zipEnded = true;
-      checkCompletion();
-    });
-
-    return this.loadFromFiles(allFiles, options);
+    return this.loadFromFiles(filesRecord, options);
   }
 
   /**

@@ -11,9 +11,8 @@
  */
 
 import fs from "fs";
-import type { UnzipFile } from "fflate";
-import { Unzip, UnzipInflate } from "fflate";
 import { PassThrough } from "stream";
+import { ZipParser } from "../utils/unzip/zip-parser";
 import { ZipWriter } from "../utils/zip-stream";
 import { StreamBuf } from "../utils/stream-buf";
 import { fileExists, bufferToString } from "../utils/utils";
@@ -116,77 +115,25 @@ class XLSX extends XLSXBase {
   // ===========================================================================
 
   async read(stream: any, options?: any): Promise<any> {
-    const allFiles: Record<string, Uint8Array> = {};
+    // Collect all stream data into a single buffer
+    const chunks: Uint8Array[] = [];
 
     await new Promise<void>((resolve, reject) => {
-      let filesProcessed = 0;
-      let zipEnded = false;
-      let filesStarted = 0;
-
-      const cleanup = () => {
-        stream.removeListener("data", onData);
-        stream.removeListener("end", onEnd);
-        stream.removeListener("error", onError);
-      };
-
-      const checkCompletion = () => {
-        if (zipEnded && filesProcessed === filesStarted) {
-          cleanup();
-          resolve();
-        }
-      };
-
-      const unzipper = new Unzip((file: UnzipFile) => {
-        filesStarted++;
-        const fileChunks: Uint8Array[] = [];
-        let totalLength = 0;
-
-        file.ondata = (err, data, final) => {
-          if (err) {
-            cleanup();
-            reject(err);
-            return;
-          }
-          if (data) {
-            fileChunks.push(data);
-            totalLength += data.length;
-          }
-          if (final) {
-            if (fileChunks.length === 1) {
-              allFiles[file.name] = fileChunks[0];
-            } else if (fileChunks.length > 1) {
-              const fullData = new Uint8Array(totalLength);
-              let offset = 0;
-              for (const chunk of fileChunks) {
-                fullData.set(chunk, offset);
-                offset += chunk.length;
-              }
-              allFiles[file.name] = fullData;
-            } else {
-              allFiles[file.name] = new Uint8Array(0);
-            }
-            filesProcessed++;
-            fileChunks.length = 0;
-            checkCompletion();
-          }
-        };
-        file.start();
-      });
-
-      unzipper.register(UnzipInflate);
-
       const onData = (chunk: Buffer) => {
-        unzipper.push(chunk);
+        chunks.push(chunk);
       };
 
       const onEnd = () => {
-        unzipper.push(new Uint8Array(0), true);
-        zipEnded = true;
-        checkCompletion();
+        stream.removeListener("data", onData);
+        stream.removeListener("end", onEnd);
+        stream.removeListener("error", onError);
+        resolve();
       };
 
       const onError = (err: Error) => {
-        cleanup();
+        stream.removeListener("data", onData);
+        stream.removeListener("end", onEnd);
+        stream.removeListener("error", onError);
         reject(err);
       };
 
@@ -194,6 +141,25 @@ class XLSX extends XLSXBase {
       stream.on("end", onEnd);
       stream.on("error", onError);
     });
+
+    // Combine chunks into a single buffer
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const buffer = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      buffer.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    // Use native ZipParser for extraction
+    const parser = new ZipParser(buffer);
+    const filesMap = await parser.extractAll();
+
+    // Convert Map to Record for loadFromFiles
+    const allFiles: Record<string, Uint8Array> = {};
+    for (const [path, content] of filesMap) {
+      allFiles[path] = content;
+    }
 
     return this.loadFromFiles(allFiles, options);
   }

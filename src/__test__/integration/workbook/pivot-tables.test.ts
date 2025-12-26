@@ -4,7 +4,7 @@ import { promisify } from "util";
 
 const fsReadFileAsync = promisify(fs.readFile);
 
-import { unzipSync } from "fflate";
+import { ZipParser } from "../../../utils/unzip/zip-parser";
 
 import { Workbook } from "../../../index";
 
@@ -53,7 +53,7 @@ describe("Workbook", () => {
 
       return workbook.xlsx.writeFile(TEST_XLSX_FILEPATH).then(async () => {
         const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
           expect(zipData[filepath]).toBeDefined();
         }
@@ -91,7 +91,7 @@ describe("Workbook", () => {
 
       return workbook.xlsx.writeFile(TEST_XLSX_TABLE_FILEPATH).then(async () => {
         const buffer = await fsReadFileAsync(TEST_XLSX_TABLE_FILEPATH);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
           expect(zipData[filepath]).toBeDefined();
         }
@@ -108,7 +108,7 @@ describe("Workbook", () => {
 
       return workbook.xlsx.writeFile(TEST_XLSX_FILEPATH).then(async () => {
         const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
           expect(zipData[filepath]).toBeUndefined();
         }
@@ -258,7 +258,7 @@ describe("Workbook", () => {
       const offsetFilePath = testFilePath("workbook-pivot-offset.test");
       return workbook.xlsx.writeFile(offsetFilePath).then(async () => {
         const buffer = await fsReadFileAsync(offsetFilePath);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
           expect(zipData[filepath]).toBeDefined();
         }
@@ -293,7 +293,7 @@ describe("Workbook", () => {
       const multiValuesFilePath = testFilePath("workbook-pivot-multi-values.test");
       return workbook.xlsx.writeFile(multiValuesFilePath).then(async () => {
         const buffer = await fsReadFileAsync(multiValuesFilePath);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
           expect(zipData[filepath]).toBeDefined();
         }
@@ -317,7 +317,7 @@ describe("Workbook", () => {
       const emptyColsFilePath = testFilePath("workbook-pivot-empty-cols.test");
       return workbook.xlsx.writeFile(emptyColsFilePath).then(async () => {
         const buffer = await fsReadFileAsync(emptyColsFilePath);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
           expect(zipData[filepath]).toBeDefined();
         }
@@ -386,7 +386,7 @@ describe("Workbook", () => {
 
       // Verify the pivot table XML contains the correct attribute
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
       const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
 
       expect(pivotTableXml).toContain('applyWidthHeightFormats="0"');
@@ -412,7 +412,7 @@ describe("Workbook", () => {
 
       // Verify the pivot table XML contains the default attribute
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
       const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
 
       expect(pivotTableXml).toContain('applyWidthHeightFormats="1"');
@@ -438,7 +438,7 @@ describe("Workbook", () => {
 
       // Verify the file was created successfully
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
 
       // Verify pivot table XML exists
       expect(zipData["xl/pivotTables/pivotTable1.xml"]).toBeDefined();
@@ -472,7 +472,7 @@ describe("Workbook", () => {
 
       // Verify the file was created successfully
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
 
       // Verify pivot cache definition contains properly escaped XML
       const cacheDefinition = new TextDecoder().decode(
@@ -521,7 +521,7 @@ describe("Workbook", () => {
 
       // Verify the file was created successfully (no crash)
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
 
       // Verify pivot cache records contains <m /> for missing values
       const cacheRecords = new TextDecoder().decode(
@@ -584,7 +584,7 @@ describe("Workbook", () => {
 
       // Verify the file was created successfully
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
 
       // Verify all three pivot tables exist
       expect(zipData["xl/pivotTables/pivotTable1.xml"]).toBeDefined();
@@ -639,7 +639,7 @@ describe("Workbook", () => {
 
       // Verify the file was created successfully
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
 
       // Verify pivot table XML contains count-specific attributes
       const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
@@ -668,7 +668,7 @@ describe("Workbook", () => {
       await workbook.xlsx.writeFile(TEST_XLSX_FILEPATH);
 
       const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-      const zipData = unzipSync(new Uint8Array(buffer));
+      const zipData = new ZipParser(buffer).extractAllSync();
 
       const pivotTableXml = new TextDecoder().decode(zipData["xl/pivotTables/pivotTable1.xml"]);
 
@@ -737,7 +737,7 @@ describe("Workbook", () => {
 
         // Step 6: Verify pivot table files are present in the saved file
         const buffer = await fsReadFileAsync(ROUNDTRIP_FILEPATH2);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
           expect(zipData[filepath]).toBeDefined();
         }
@@ -787,7 +787,7 @@ describe("Workbook", () => {
 
         // Step 6: Verify both pivot tables files exist
         const buffer = await fsReadFileAsync(MULTI_PIVOT_PATH2);
-        const zipData = unzipSync(new Uint8Array(buffer));
+        const zipData = new ZipParser(buffer).extractAllSync();
 
         // Both pivot tables should have their files
         expect(zipData["xl/pivotTables/pivotTable1.xml"]).toBeDefined();

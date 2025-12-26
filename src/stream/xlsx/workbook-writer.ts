@@ -1,5 +1,5 @@
 import fs from "fs";
-import { Zip, ZipDeflate } from "fflate";
+import { Zip, ZipDeflate } from "../../utils/zip/streaming-zip";
 import { StreamBuf } from "../../utils/stream-buf";
 import { RelType } from "../../xlsx/rel-type";
 import { StylesXform } from "../../xlsx/xform/style/styles-xform";

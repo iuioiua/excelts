@@ -550,6 +550,18 @@ export class ZipParser {
   }
 
   /**
+   * Extract all files (sync, Node.js only)
+   * Returns object with file paths as keys and Uint8Array content as values
+   */
+  extractAllSync(): Record<string, Uint8Array> {
+    const result: Record<string, Uint8Array> = {};
+    for (const entry of this.entries) {
+      result[entry.path] = extractEntryDataSync(this.data, entry);
+    }
+    return result;
+  }
+
+  /**
    * Iterate over entries with async callback
    */
   async forEach(
